@@ -16,13 +16,9 @@ function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-950 text-white">
-      <h1 className="mb-4 text-4xl font-bold">
-        AI Interview Assessment System
-      </h1>
+      <h1 className="mb-4 text-4xl font-bold">AI Interview Assessment System</h1>
 
-      <p className="text-lg text-gray-300">
-        Backend status: {status}
-      </p>
+      <p className="text-lg text-gray-300">Backend status: {status}</p>
     </div>
   );
 }
