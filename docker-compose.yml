@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: ai-interview-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: interview_db
+      POSTGRES_USER: interview_user
+      POSTGRES_PASSWORD: interview_password
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
