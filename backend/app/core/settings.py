@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     database_url: str = ""
     jwt_secret: str = ""
+    jwt_expiration_minutes: int = 60
 
     model_config = SettingsConfigDict(
         env_file=".env",
