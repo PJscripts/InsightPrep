@@ -5,6 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Interview from "./pages/Interview";
+import InterviewResult from "./pages/InterviewResult";
 
 function App() {
   return (
@@ -17,6 +19,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
+
+        <Route path="/interview/:sessionId" element={<Interview />} />
+        <Route path="/interview/:sessionId/result" element={<InterviewResult />} />
       </Routes>
     </BrowserRouter>
   );

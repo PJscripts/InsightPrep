@@ -34,3 +34,9 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    interview_sessions = relationship(
+        "InterviewSession",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

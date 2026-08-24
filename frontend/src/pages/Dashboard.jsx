@@ -14,6 +14,12 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [analysis, setAnalysis] = useState(null);
 
+  const [interviewType, setInterviewType] = useState("technical");
+  const [difficulty, setDifficulty] = useState("medium");
+  const [totalQuestions, setTotalQuestions] = useState(5);
+  const [startingInterview, setStartingInterview] = useState(false);
+  const [interviewError, setInterviewError] = useState("");
+
   async function handleLogout() {
     try {
       await logout();
@@ -75,6 +81,38 @@ function Dashboard() {
     }
   }
 
+  async function handleStartInterview() {
+    setStartingInterview(true);
+    setInterviewError("");
+
+    try {
+      const response = await fetch("http://localhost:8000/interviews/sessions", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          interview_type: interviewType,
+          difficulty,
+          total_questions: totalQuestions,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to start interview.");
+      }
+
+      navigate(`/interview/${data.id}`);
+    } catch (err) {
+      setInterviewError(err.message);
+    } finally {
+      setStartingInterview(false);
+    }
+  }
+
   if (!user) {
     return <p>Loading...</p>;
   }
@@ -124,6 +162,69 @@ function Dashboard() {
           />
         </section>
       )}
+
+      <hr />
+
+      <section>
+        <h2>Start Interview</h2>
+
+        <div>
+          <label htmlFor="interview-type">Interview Type:</label>
+          <select
+            id="interview-type"
+            value={interviewType}
+            onChange={(event) => setInterviewType(event.target.value)}
+            disabled={startingInterview}
+          >
+            <option value="technical">Technical</option>
+            <option value="hr">HR</option>
+            <option value="mixed">Mixed</option>
+          </select>
+        </div>
+
+        <br />
+
+        <div>
+          <label htmlFor="difficulty">Difficulty:</label>
+          <select
+            id="difficulty"
+            value={difficulty}
+            onChange={(event) => setDifficulty(event.target.value)}
+            disabled={startingInterview}
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+
+        <br />
+
+        <div>
+          <label htmlFor="total-questions">Number of Questions:</label>
+          <select
+            id="total-questions"
+            value={totalQuestions}
+            onChange={(event) => setTotalQuestions(Number(event.target.value))}
+            disabled={startingInterview}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+          </select>
+        </div>
+
+        <br />
+
+        <button
+          type="button"
+          onClick={handleStartInterview}
+          disabled={startingInterview}
+        >
+          {startingInterview ? "Starting..." : "Start Interview"}
+        </button>
+
+        {interviewError && <p>{interviewError}</p>}
+      </section>
 
       <hr />
 
