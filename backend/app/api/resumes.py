@@ -48,6 +48,10 @@ async def upload_resume(
         analyzer = get_resume_analyzer()
         analysis = analyzer.analyze(extracted_text)
     except Exception as exc:
+        import traceback
+
+        traceback.print_exc()
+
         delete_resume_file(str(file_path))
 
         raise HTTPException(

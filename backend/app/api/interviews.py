@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.settings import settings
 from app.models.interview_answer import InterviewAnswer
 from app.models.interview_question import InterviewQuestion
 from app.models.interview_session import InterviewSession
@@ -15,14 +16,10 @@ from app.schemas.interview import (
     InterviewSessionResponse,
 )
 from app.services.answer_evaluator import AnswerEvaluator
-from app.services.mock_answer_evaluator import mock_answer_evaluator
+from app.services.answer_evaluator_factory import get_answer_evaluator
 from app.services.question_generator_factory import get_question_generator
 
 router = APIRouter(prefix="/interviews", tags=["Interviews"])
-
-
-def get_answer_evaluator() -> AnswerEvaluator:
-    return mock_answer_evaluator
 
 
 @router.post(
@@ -65,12 +62,27 @@ def create_interview_session(
 
     question_generator = get_question_generator()
 
-    question_text = question_generator.generate_question(
-        resume_analysis=latest_resume.analysis or {},
-        interview_type=config.interview_type,
-        difficulty=config.difficulty,
-        question_number=1,
-    )
+    try:
+        question_text = question_generator.generate_question(
+            resume_analysis=latest_resume.analysis or {},
+            interview_type=config.interview_type,
+            difficulty=config.difficulty,
+            question_number=1,
+        )
+    except Exception:
+        if settings.llm_mode.lower() != "gemini":
+            raise
+
+        from app.services.mock_question_generator import (
+            mock_question_generator,
+        )
+
+        question_text = mock_question_generator.generate_question(
+            resume_analysis=latest_resume.analysis or {},
+            interview_type=config.interview_type,
+            difficulty=config.difficulty,
+            question_number=1,
+        )
 
     question = InterviewQuestion(
         session_id=session.id,
@@ -193,13 +205,27 @@ def submit_answer(
             detail="Resume associated with interview not found",
         )
 
-    evaluator = get_answer_evaluator()
+    evaluator: AnswerEvaluator = get_answer_evaluator()
 
-    evaluation = evaluator.evaluate(
-        question=current_question.question_text,
-        answer=data.answer_text,
-        resume_analysis=resume.analysis or {},
-    )
+    try:
+        evaluation = evaluator.evaluate(
+            question=current_question.question_text,
+            answer=data.answer_text,
+            resume_analysis=resume.analysis or {},
+        )
+    except Exception:
+        if settings.llm_mode.lower() != "gemini":
+            raise
+
+        from app.services.mock_answer_evaluator import (
+            mock_answer_evaluator,
+        )
+
+        evaluation = mock_answer_evaluator.evaluate(
+            question=current_question.question_text,
+            answer=data.answer_text,
+            resume_analysis=resume.analysis or {},
+        )
 
     answer = InterviewAnswer(
         question_id=current_question.id,
@@ -225,12 +251,27 @@ def submit_answer(
 
     question_generator = get_question_generator()
 
-    next_question_text = question_generator.generate_question(
-        resume_analysis=resume.analysis or {},
-        interview_type=session.interview_type,
-        difficulty=session.difficulty,
-        question_number=session.current_question,
-    )
+    try:
+        next_question_text = question_generator.generate_question(
+            resume_analysis=resume.analysis or {},
+            interview_type=session.interview_type,
+            difficulty=session.difficulty,
+            question_number=session.current_question,
+        )
+    except Exception:
+        if settings.llm_mode.lower() != "gemini":
+            raise
+
+        from app.services.mock_question_generator import (
+            mock_question_generator,
+        )
+
+        next_question_text = mock_question_generator.generate_question(
+            resume_analysis=resume.analysis or {},
+            interview_type=session.interview_type,
+            difficulty=session.difficulty,
+            question_number=session.current_question,
+        )
 
     next_question = InterviewQuestion(
         session_id=session.id,

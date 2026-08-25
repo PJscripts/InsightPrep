@@ -20,4 +20,4 @@ class InterviewSessionResponse(BaseModel):
 
 
 class AnswerSubmission(BaseModel):
-    answer_text: str = Field(min_length=1, max_length=10000)
+    answer_text: str = Field(min_length=1, max_length=5000)
