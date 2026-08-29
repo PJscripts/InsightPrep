@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.settings import settings
 from app.models.resume import Resume
 from app.models.user import User
 from app.services.analyzer_factory import get_resume_analyzer
@@ -46,7 +47,43 @@ async def upload_resume(
         extracted_text = extract_resume_text(str(file_path))
 
         analyzer = get_resume_analyzer()
-        analysis = analyzer.analyze(extracted_text)
+
+        try:
+            analysis = analyzer.analyze(extracted_text)
+
+        except Exception:
+            fallback_provider = settings.resume_fallback_llm.lower()
+
+            if fallback_provider == "groq":
+                try:
+                    from app.services.groq_resume_analyzer import (
+                        GroqResumeAnalyzer,
+                    )
+
+                    fallback_analyzer = GroqResumeAnalyzer()
+                    analysis = fallback_analyzer.analyze(extracted_text)
+
+                except Exception:
+                    from app.services.mock_resume_analyzer import (
+                        MockResumeAnalyzer,
+                    )
+
+                    analysis = MockResumeAnalyzer().analyze(
+                        extracted_text,
+                    )
+
+            elif fallback_provider == "mock":
+                from app.services.mock_resume_analyzer import (
+                    MockResumeAnalyzer,
+                )
+
+                analysis = MockResumeAnalyzer().analyze(
+                    extracted_text,
+                )
+
+            else:
+                raise
+
     except Exception as exc:
         import traceback
 

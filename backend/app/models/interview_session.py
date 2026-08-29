@@ -48,6 +48,18 @@ class InterviewSession(Base):
         default="created",
     )
 
+    question_provider: Mapped[str] = mapped_column(
+        String(20),
+        default="gemini",
+        nullable=False,
+    )
+
+    evaluation_provider: Mapped[str] = mapped_column(
+        String(20),
+        default="gemini",
+        nullable=False,
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,

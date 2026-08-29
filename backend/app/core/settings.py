@@ -15,8 +15,21 @@ class Settings(BaseSettings):
     jwt_expiration_minutes: int = 60
 
     gemini_api_key: str = ""
-    llm_mode: str = "mock"
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.7-flash"
+
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+
+    resume_primary_llm: str = "gemini"
+    resume_fallback_llm: str = "groq"
+
+    question_primary_llm: str = "gemini"
+    question_fallback_llm: str = "groq"
+
+    evaluation_primary_llm: str = "gemini"
+    evaluation_fallback_llm: str = "groq"
+
+    llm_final_fallback: str = "mock"
 
     model_config = SettingsConfigDict(
         env_file=".env",

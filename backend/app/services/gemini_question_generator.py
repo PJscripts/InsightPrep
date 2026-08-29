@@ -3,7 +3,6 @@ from typing import Any
 from google import genai
 
 from app.core.settings import settings
-from app.services.question_generator import QuestionGenerator
 
 
 class GeminiQuestionGenerator:
@@ -21,35 +20,53 @@ class GeminiQuestionGenerator:
         interview_type: str,
         difficulty: str,
         question_number: int,
+        previous_questions: list[str] | None = None,
+        previous_answers: list[str] | None = None,
+        previous_evaluations: list[dict[str, Any]] | None = None,
     ) -> str:
-        skills = resume_analysis.get("skills", [])
-        strengths = resume_analysis.get("strengths", [])
-        skill_gaps = resume_analysis.get("skill_gaps", [])
-        recommended_topics = resume_analysis.get("recommended_topics", [])
+        previous_questions = previous_questions or []
+        previous_answers = previous_answers or []
+        previous_evaluations = previous_evaluations or []
 
         prompt = f"""
-You are an AI interviewer generating one personalized interview question.
+You are an expert technical interviewer conducting a personalized
+interview.
 
 Candidate profile:
-Skills: {skills}
-Strengths: {strengths}
-Skill gaps: {skill_gaps}
-Recommended topics: {recommended_topics}
+Skills: {resume_analysis.get("skills", [])}
+Experience: {resume_analysis.get("experience", [])}
+Education: {resume_analysis.get("education", [])}
+Projects: {resume_analysis.get("projects", [])}
+Strengths: {resume_analysis.get("strengths", [])}
+Skill gaps: {resume_analysis.get("skill_gaps", [])}
+Recommended topics: {resume_analysis.get("recommended_topics", [])}
 
-Interview settings:
-Type: {interview_type}
+Interview type: {interview_type}
 Difficulty: {difficulty}
-Question number: {question_number}
+Current question number: {question_number}
+
+Previous questions:
+{previous_questions}
+
+Previous candidate answers:
+{previous_answers}
+
+Previous evaluations:
+{previous_evaluations}
 
 Generate exactly ONE interview question.
 
-Requirements:
-- Personalize it using the candidate profile.
-- Match the requested interview type and difficulty.
-- Focus on skills, projects, experience, or identified gaps.
-- Do not invent candidate experience.
-- Do not include the answer.
-- Do not include numbering.
+Rules:
+- Maintain a consistent professional interview style.
+- Maintain the requested difficulty.
+- Do not repeat any previous question.
+- Build naturally on the candidate's previous answers.
+- Use the candidate profile for personalization.
+- Consider previous evaluations when deciding what to ask next.
+- Probe weak areas when appropriate.
+- Avoid asking about something the candidate has already demonstrated
+  sufficiently unless a deeper follow-up is useful.
+- Do not invent candidate experience or skills.
 - Return ONLY the question text.
 """
 
@@ -59,17 +76,15 @@ Requirements:
                 contents=prompt,
             )
         except Exception as exc:
-            raise RuntimeError("Gemini question generation failed") from exc
+            raise RuntimeError(
+                "Gemini question generation failed",
+            ) from exc
 
         question = (response.text or "").strip()
 
         if not question:
-            raise RuntimeError("Gemini returned an empty question")
+            raise RuntimeError(
+                "Gemini returned an empty interview question",
+            )
 
         return question
-
-
-gemini_question_generator: QuestionGenerator | None = None
-
-if settings.llm_mode.lower() == "gemini":
-    gemini_question_generator = GeminiQuestionGenerator()

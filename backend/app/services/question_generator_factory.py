@@ -1,17 +1,15 @@
-from app.core.settings import settings
+from app.services.gemini_question_generator import GeminiQuestionGenerator
+from app.services.groq_question_generator import GroqQuestionGenerator
 from app.services.mock_question_generator import MockQuestionGenerator
-from app.services.question_generator import QuestionGenerator
 
 
-def get_question_generator() -> QuestionGenerator:
-    if settings.llm_mode.lower() != "gemini":
-        return MockQuestionGenerator()
+def get_question_generator(provider: str = "mock"):
+    provider = provider.lower()
 
-    from app.services.gemini_question_generator import (
-        GeminiQuestionGenerator,
-    )
-
-    try:
+    if provider == "gemini":
         return GeminiQuestionGenerator()
-    except Exception:
-        return MockQuestionGenerator()
+
+    if provider == "groq":
+        return GroqQuestionGenerator()
+
+    return MockQuestionGenerator()

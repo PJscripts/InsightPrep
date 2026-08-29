@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,10 +18,233 @@ from app.schemas.interview import (
     InterviewSessionResponse,
 )
 from app.services.answer_evaluator import AnswerEvaluator
-from app.services.answer_evaluator_factory import get_answer_evaluator
-from app.services.question_generator_factory import get_question_generator
+from app.services.gemini_answer_evaluator import GeminiAnswerEvaluator
+from app.services.gemini_question_generator import GeminiQuestionGenerator
+from app.services.groq_answer_evaluator import GroqAnswerEvaluator
+from app.services.groq_question_generator import GroqQuestionGenerator
+from app.services.mock_answer_evaluator import MockAnswerEvaluator
+from app.services.mock_question_generator import MockQuestionGenerator
 
 router = APIRouter(prefix="/interviews", tags=["Interviews"])
+
+
+def get_question_generator_for_provider(provider: str):
+    provider = provider.lower()
+
+    if provider == "gemini":
+        return GeminiQuestionGenerator()
+
+    if provider == "groq":
+        return GroqQuestionGenerator()
+
+    if provider == "mock":
+        return MockQuestionGenerator()
+
+    raise ValueError(f"Unsupported question provider: {provider}")
+
+
+def get_answer_evaluator_for_provider(provider: str) -> AnswerEvaluator:
+    provider = provider.lower()
+
+    if provider == "gemini":
+        return GeminiAnswerEvaluator()
+
+    if provider == "groq":
+        return GroqAnswerEvaluator()
+
+    if provider == "mock":
+        return MockAnswerEvaluator()
+
+    raise ValueError(f"Unsupported evaluation provider: {provider}")
+
+
+def build_interview_history(
+    session: InterviewSession,
+    db: Session,
+) -> tuple[
+    list[str],
+    list[str],
+    list[dict[str, Any]],
+]:
+    questions = db.scalars(
+        select(InterviewQuestion)
+        .where(InterviewQuestion.session_id == session.id)
+        .order_by(InterviewQuestion.question_number)
+    ).all()
+
+    previous_questions = [question.question_text for question in questions]
+
+    previous_answers = [
+        question.answer.answer_text
+        for question in questions
+        if question.answer is not None
+    ]
+
+    previous_evaluations = [
+        {
+            "score": question.answer.score,
+            "feedback": question.answer.feedback,
+        }
+        for question in questions
+        if question.answer is not None
+    ]
+
+    return (
+        previous_questions,
+        previous_answers,
+        previous_evaluations,
+    )
+
+
+def generate_question_with_fallback(
+    session: InterviewSession,
+    resume_analysis: dict[str, Any],
+    db: Session,
+) -> str:
+    (
+        previous_questions,
+        previous_answers,
+        previous_evaluations,
+    ) = build_interview_history(session, db)
+
+    provider = session.question_provider.lower()
+
+    if provider == "mock":
+        generator = get_question_generator_for_provider("mock")
+
+        return generator.generate_question(
+            resume_analysis=resume_analysis,
+            interview_type=session.interview_type,
+            difficulty=session.difficulty,
+            question_number=session.current_question,
+            previous_questions=previous_questions,
+            previous_answers=previous_answers,
+            previous_evaluations=previous_evaluations,
+        )
+
+    try:
+        generator = get_question_generator_for_provider(provider)
+
+        return generator.generate_question(
+            resume_analysis=resume_analysis,
+            interview_type=session.interview_type,
+            difficulty=session.difficulty,
+            question_number=session.current_question,
+            previous_questions=previous_questions,
+            previous_answers=previous_answers,
+            previous_evaluations=previous_evaluations,
+        )
+
+    except Exception:
+        if provider == "gemini":
+            fallback_provider = settings.question_fallback_llm.lower()
+        else:
+            fallback_provider = "mock"
+
+        if fallback_provider == "groq":
+            try:
+                generator = get_question_generator_for_provider("groq")
+
+                question_text = generator.generate_question(
+                    resume_analysis=resume_analysis,
+                    interview_type=session.interview_type,
+                    difficulty=session.difficulty,
+                    question_number=session.current_question,
+                    previous_questions=previous_questions,
+                    previous_answers=previous_answers,
+                    previous_evaluations=previous_evaluations,
+                )
+
+                session.question_provider = "groq"
+                db.flush()
+
+                return question_text
+
+            except Exception:
+                pass
+
+        generator = get_question_generator_for_provider(
+            settings.llm_final_fallback.lower(),
+        )
+
+        question_text = generator.generate_question(
+            resume_analysis=resume_analysis,
+            interview_type=session.interview_type,
+            difficulty=session.difficulty,
+            question_number=session.current_question,
+            previous_questions=previous_questions,
+            previous_answers=previous_answers,
+            previous_evaluations=previous_evaluations,
+        )
+
+        session.question_provider = settings.llm_final_fallback.lower()
+        db.flush()
+
+        return question_text
+
+
+def evaluate_answer_with_fallback(
+    session: InterviewSession,
+    question_text: str,
+    answer_text: str,
+    resume_analysis: dict[str, Any],
+) -> dict[str, Any]:
+    provider = session.evaluation_provider.lower()
+
+    if provider == "mock":
+        evaluator = get_answer_evaluator_for_provider("mock")
+
+        return evaluator.evaluate(
+            question=question_text,
+            answer=answer_text,
+            resume_analysis=resume_analysis,
+        )
+
+    try:
+        evaluator = get_answer_evaluator_for_provider(provider)
+
+        return evaluator.evaluate(
+            question=question_text,
+            answer=answer_text,
+            resume_analysis=resume_analysis,
+        )
+
+    except Exception:
+        if provider == "gemini":
+            fallback_provider = settings.evaluation_fallback_llm.lower()
+        else:
+            fallback_provider = "mock"
+
+        if fallback_provider == "groq":
+            try:
+                evaluator = get_answer_evaluator_for_provider("groq")
+
+                evaluation = evaluator.evaluate(
+                    question=question_text,
+                    answer=answer_text,
+                    resume_analysis=resume_analysis,
+                )
+
+                session.evaluation_provider = "groq"
+
+                return evaluation
+
+            except Exception:
+                pass
+
+        evaluator = get_answer_evaluator_for_provider(
+            settings.llm_final_fallback.lower(),
+        )
+
+        evaluation = evaluator.evaluate(
+            question=question_text,
+            answer=answer_text,
+            resume_analysis=resume_analysis,
+        )
+
+        session.evaluation_provider = settings.llm_final_fallback.lower()
+
+        return evaluation
 
 
 @router.post(
@@ -55,33 +280,25 @@ def create_interview_session(
         total_questions=config.total_questions,
         current_question=1,
         status="in_progress",
+        question_provider=settings.question_primary_llm.lower(),
+        evaluation_provider=settings.evaluation_primary_llm.lower(),
     )
 
     db.add(session)
     db.flush()
 
-    question_generator = get_question_generator()
-
     try:
-        question_text = question_generator.generate_question(
+        question_text = generate_question_with_fallback(
+            session=session,
             resume_analysis=latest_resume.analysis or {},
-            interview_type=config.interview_type,
-            difficulty=config.difficulty,
-            question_number=1,
+            db=db,
         )
     except Exception:
-        if settings.llm_mode.lower() != "gemini":
-            raise
+        db.rollback()
 
-        from app.services.mock_question_generator import (
-            mock_question_generator,
-        )
-
-        question_text = mock_question_generator.generate_question(
-            resume_analysis=latest_resume.analysis or {},
-            interview_type=config.interview_type,
-            difficulty=config.difficulty,
-            question_number=1,
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to generate the first interview question",
         )
 
     question = InterviewQuestion(
@@ -205,27 +422,12 @@ def submit_answer(
             detail="Resume associated with interview not found",
         )
 
-    evaluator: AnswerEvaluator = get_answer_evaluator()
-
-    try:
-        evaluation = evaluator.evaluate(
-            question=current_question.question_text,
-            answer=data.answer_text,
-            resume_analysis=resume.analysis or {},
-        )
-    except Exception:
-        if settings.llm_mode.lower() != "gemini":
-            raise
-
-        from app.services.mock_answer_evaluator import (
-            mock_answer_evaluator,
-        )
-
-        evaluation = mock_answer_evaluator.evaluate(
-            question=current_question.question_text,
-            answer=data.answer_text,
-            resume_analysis=resume.analysis or {},
-        )
+    evaluation = evaluate_answer_with_fallback(
+        session=session,
+        question_text=current_question.question_text,
+        answer_text=data.answer_text,
+        resume_analysis=resume.analysis or {},
+    )
 
     answer = InterviewAnswer(
         question_id=current_question.id,
@@ -249,28 +451,18 @@ def submit_answer(
 
     session.current_question += 1
 
-    question_generator = get_question_generator()
-
     try:
-        next_question_text = question_generator.generate_question(
+        next_question_text = generate_question_with_fallback(
+            session=session,
             resume_analysis=resume.analysis or {},
-            interview_type=session.interview_type,
-            difficulty=session.difficulty,
-            question_number=session.current_question,
+            db=db,
         )
     except Exception:
-        if settings.llm_mode.lower() != "gemini":
-            raise
+        db.rollback()
 
-        from app.services.mock_question_generator import (
-            mock_question_generator,
-        )
-
-        next_question_text = mock_question_generator.generate_question(
-            resume_analysis=resume.analysis or {},
-            interview_type=session.interview_type,
-            difficulty=session.difficulty,
-            question_number=session.current_question,
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to generate the next interview question",
         )
 
     next_question = InterviewQuestion(
@@ -364,7 +556,7 @@ def get_interview_result(
                 "question_number": question.question_number,
                 "question": question.question_text,
                 "answer": (question.answer.answer_text if question.answer else None),
-                "score": question.answer.score if question.answer else None,
+                "score": (question.answer.score if question.answer else None),
                 "feedback": (question.answer.feedback if question.answer else None),
             }
             for question in questions
