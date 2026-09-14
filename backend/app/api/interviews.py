@@ -308,9 +308,16 @@ def create_interview_session(
         question_type=config.interview_type,
     )
 
-    db.add(question)
-    db.commit()
-    db.refresh(session)
+    try:
+        db.add(question)
+        db.commit()
+        db.refresh(session)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not save the interview session",
+        ) from exc
 
     return session
 
@@ -440,7 +447,15 @@ def submit_answer(
 
     if session.current_question >= session.total_questions:
         session.status = "completed"
-        db.commit()
+
+        try:
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not save the completed interview",
+            ) from exc
 
         return {
             "session_id": session.id,
@@ -472,8 +487,15 @@ def submit_answer(
         question_type=session.interview_type,
     )
 
-    db.add(next_question)
-    db.commit()
+    try:
+        db.add(next_question)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not save the next interview question",
+        ) from exc
 
     return {
         "session_id": session.id,
@@ -596,7 +618,15 @@ def abandon_interview_session(
         )
 
     session.status = "abandoned"
-    db.commit()
+
+    try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not abandon the interview session",
+        ) from exc
 
     return {
         "session_id": session.id,

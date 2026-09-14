@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -8,6 +8,13 @@ from app.core.database import Base
 
 class InterviewQuestion(Base):
     __tablename__ = "interview_questions"
+    __table_args__ = (
+        UniqueConstraint(
+            "session_id",
+            "question_number",
+            name="uq_interview_questions_session_number",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,

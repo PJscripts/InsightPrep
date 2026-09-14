@@ -23,11 +23,11 @@ class Settings(BaseSettings):
     resume_primary_llm: str = "gemini"
     resume_fallback_llm: str = "groq"
 
-    question_primary_llm: str = "gemini"
-    question_fallback_llm: str = "groq"
+    question_primary_llm: str = "groq"
+    question_fallback_llm: str = "gemini"
 
-    evaluation_primary_llm: str = "gemini"
-    evaluation_fallback_llm: str = "groq"
+    evaluation_primary_llm: str = "groq"
+    evaluation_fallback_llm: str = "gemini"
 
     llm_final_fallback: str = "mock"
 

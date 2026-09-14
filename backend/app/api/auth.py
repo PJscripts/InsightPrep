@@ -51,7 +51,7 @@ def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,
+        secure=settings.environment.lower() == "production",
         samesite="lax",
         max_age=settings.jwt_expiration_minutes * 60,
     )

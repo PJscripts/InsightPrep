@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -12,6 +13,8 @@ from app.models.user import User
 from app.services.analyzer_factory import get_resume_analyzer
 from app.services.file_storage import delete_resume_file, save_resume_file
 from app.services.resume_extractor import extract_resume_text
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
@@ -85,9 +88,7 @@ async def upload_resume(
                 raise
 
     except Exception as exc:
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Failed to process resume")
 
         delete_resume_file(str(file_path))
 
@@ -106,9 +107,17 @@ async def upload_resume(
         analysis=analysis,
     )
 
-    db.add(resume)
-    db.commit()
-    db.refresh(resume)
+    try:
+        db.add(resume)
+        db.commit()
+        db.refresh(resume)
+    except Exception as exc:
+        db.rollback()
+        delete_resume_file(str(file_path))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not save the processed resume",
+        ) from exc
 
     return {
         "id": resume.id,
