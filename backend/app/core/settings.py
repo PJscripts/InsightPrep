@@ -13,12 +13,20 @@ class Settings(BaseSettings):
     database_url: str = ""
     jwt_secret: str = ""
     jwt_expiration_minutes: int = 60
+    llm_timeout_seconds: int = 30
+    llm_max_retries: int = 2
 
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.7-flash"
 
     groq_api_key: str = ""
     groq_model: str = "openai/gpt-oss-120b"
+
+    elevenlabs_api_key: str = ""
+    elevenlabs_voice_id: str = ""
+    elevenlabs_model_id: str = "eleven_multilingual_v2"
+    elevenlabs_output_format: str = "mp3_44100_128"
+    elevenlabs_timeout_seconds: int = 30
 
     resume_primary_llm: str = "gemini"
     resume_fallback_llm: str = "groq"

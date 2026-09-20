@@ -4,6 +4,9 @@ from typing import Any
 from google import genai
 
 from app.core.settings import settings
+from app.services.evaluation_dimensions import (
+    normalize_skill_dimensions,
+)
 
 
 class GeminiAnswerEvaluator:
@@ -69,6 +72,12 @@ Evaluation criteria:
 4. Clarity
 5. Completeness
 
+Also score these four skill dimensions independently from 0 to 10:
+- technical_knowledge: demonstrated technical understanding
+- problem_solving: reasoning, decomposition, and approach
+- communication: how clearly the answer is expressed
+- clarity: structure, precision, and ease of understanding
+
 Important rules:
 - Score only what the candidate actually demonstrated.
 - Do not give credit for skills merely because they appear on the resume.
@@ -82,15 +91,21 @@ Important rules:
 Return ONLY valid JSON:
 {{
   "score": 0.0,
-  "feedback": "..."
+  "feedback": "...",
+  "dimensions": {{
+    "technical_knowledge": 0.0,
+    "problem_solving": 0.0,
+    "communication": 0.0,
+    "clarity": 0.0
+  }}
 }}
 
 Additional requirements:
 - score must be a number from 0.0 to 10.0.
 - Use one decimal place.
 - feedback must be a non-empty string.
+- dimensions must contain all four required keys with numbers from 0.0 to 10.0.
 - Do not include markdown.
-- Do not include any additional JSON fields.
 """
 
         try:
@@ -123,6 +138,7 @@ Additional requirements:
 
         score = result.get("score")
         feedback = result.get("feedback")
+        dimensions = normalize_skill_dimensions(result.get("dimensions"))
 
         if not isinstance(score, (int, float)):
             raise RuntimeError(
@@ -140,8 +156,11 @@ Additional requirements:
             raise RuntimeError(
                 "Gemini evaluation score is outside 0-10",
             )
+        if dimensions is None:
+            raise RuntimeError("Gemini evaluation dimensions are invalid")
 
         return {
             "score": round(score, 1),
             "feedback": feedback.strip(),
+            "dimensions": dimensions,
         }

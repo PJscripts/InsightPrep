@@ -4,6 +4,9 @@ from typing import Any
 from groq import Groq
 
 from app.core.settings import settings
+from app.services.evaluation_dimensions import (
+    normalize_skill_dimensions,
+)
 
 
 class GroqAnswerEvaluator:
@@ -61,6 +64,12 @@ Evaluation criteria:
 4. Clarity
 5. Completeness
 
+Also score these four skill dimensions independently from 0 to 10:
+- technical_knowledge: demonstrated technical understanding
+- problem_solving: reasoning, decomposition, and approach
+- communication: how clearly the answer is expressed
+- clarity: structure, precision, and ease of understanding
+
 Rules:
 - Score only the submitted answer.
 - Do not give credit simply because a skill appears on the resume.
@@ -73,7 +82,13 @@ Rules:
 Return ONLY valid JSON:
 {{
     "score": 0.0,
-    "feedback": "..."
+    "feedback": "...",
+    "dimensions": {{
+        "technical_knowledge": 0.0,
+        "problem_solving": 0.0,
+        "communication": 0.0,
+        "clarity": 0.0
+    }}
 }}
 """
 
@@ -117,6 +132,7 @@ Return ONLY valid JSON:
 
         score = result.get("score")
         feedback = result.get("feedback")
+        dimensions = normalize_skill_dimensions(result.get("dimensions"))
 
         if not isinstance(score, (int, float)):
             raise RuntimeError(
@@ -134,8 +150,11 @@ Return ONLY valid JSON:
             raise RuntimeError(
                 "Groq evaluation score is outside 0-10",
             )
+        if dimensions is None:
+            raise RuntimeError("Groq evaluation dimensions are invalid")
 
         return {
             "score": round(score, 1),
             "feedback": feedback.strip(),
+            "dimensions": dimensions,
         }

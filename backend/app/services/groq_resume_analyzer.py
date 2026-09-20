@@ -11,7 +11,11 @@ class GroqResumeAnalyzer:
         if not settings.groq_api_key:
             raise ValueError("GROQ_API_KEY is not configured")
 
-        self.client = Groq(api_key=settings.groq_api_key)
+        self.client = Groq(
+            api_key=settings.groq_api_key,
+            timeout=settings.llm_timeout_seconds,
+            max_retries=settings.llm_max_retries,
+        )
 
     def analyze(self, resume_text: str) -> dict[str, Any]:
         resume_text = resume_text[:20000]

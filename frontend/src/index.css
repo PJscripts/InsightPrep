@@ -1,1 +1,12 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root { font-family: Inter, system-ui, sans-serif; color-scheme: dark; }
+html, body, #root { min-height: 100%; margin: 0; }
+body { margin: 0; background: #0b0f17; color: #f8fafc; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+* { box-sizing: border-box; }
+::selection { background: rgba(99,102,241,.35); color: #fff; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0b0f17; }
+::-webkit-scrollbar-thumb { background: #263248; border-radius: 999px; }

@@ -15,25 +15,31 @@ class MockAnswerEvaluator:
         if answer_length < 30:
             score = 4.0
             feedback = (
-                "The answer is too brief. Add more explanation, "
-                "reasoning, and a concrete example."
+                "The answer is too brief. Add more explanation, reasoning, "
+                "and a concrete example."
             )
         elif answer_length < 100:
             score = 6.5
             feedback = (
-                "The answer addresses the question, but it would "
-                "benefit from more depth and specific examples."
+                "The answer addresses the question, but it would benefit "
+                "from more depth and specific examples."
             )
         else:
             score = 8.0
             feedback = (
-                "The answer provides reasonable detail and demonstrates "
-                "a good understanding of the topic."
+                "The answer provides reasonable detail and demonstrates a "
+                "good understanding of the topic."
             )
 
         return {
             "score": score,
             "feedback": feedback,
+            "dimensions": {
+                "technical_knowledge": score,
+                "problem_solving": min(10.0, score + 0.2),
+                "communication": max(0.0, score - 0.2),
+                "clarity": score,
+            },
         }
 
 

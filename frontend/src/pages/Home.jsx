@@ -1,25 +1,53 @@
-import { useEffect, useState } from "react";
-import { getHealthStatus } from "../services/healthService";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 function Home() {
-  const [status, setStatus] = useState("Checking backend...");
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  useEffect(() => {
-    getHealthStatus()
-      .then((data) => {
-        setStatus(`${data.status} — ${data.service}`);
-      })
-      .catch(() => {
-        setStatus("Backend connection failed");
-      });
-  }, []);
+  if (user) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-950 text-white">
-      <h1 className="mb-4 text-4xl font-bold">AI Interview Assessment System</h1>
+    <main className="auth-page auth-landing">
+      <div className="auth-grid" />
+      <section className="auth-landing-panel">
+        <div className="brand-lockup">
+          <span className="brand-mark">AI</span>
+          <div>
+            <div className="brand-name">InsightPrep</div>
+            <div className="brand-sub">INTERVIEW INTELLIGENCE PLATFORM</div>
+          </div>
+        </div>
 
-      <p className="text-lg text-gray-300">Backend status: {status}</p>
-    </div>
+        <div className="auth-landing-copy">
+          <span className="status-badge status-live"><span className="status-dot" />AI INTERVIEW SYSTEM</span>
+          <h1>Practice smarter.<br /><span>Interview better.</span></h1>
+          <p>Personalized interview preparation, resume intelligence, adaptive practice, and performance analytics in one focused workspace.</p>
+        </div>
+
+        <div className="auth-choice-grid">
+          <button type="button" className="auth-choice primary-choice" onClick={() => navigate("/register")}>
+            <span className="choice-kicker">NEW CANDIDATE</span>
+            <strong>Create Account</strong>
+            <span>Start building your interview profile and personalized practice history.</span>
+            <span className="choice-arrow">→</span>
+          </button>
+          <button type="button" className="auth-choice secondary-choice" onClick={() => navigate("/login")}>
+            <span className="choice-kicker">RETURNING USER</span>
+            <strong>Login</strong>
+            <span>Continue from your existing dashboard, resume, and interview history.</span>
+            <span className="choice-arrow">→</span>
+          </button>
+        </div>
+
+        <div className="auth-trust-row">
+          <span>Resume-aware interviews</span><span>•</span><span>Adaptive questioning</span><span>•</span><span>Performance trends</span>
+        </div>
+      </section>
+    </main>
   );
 }
 
