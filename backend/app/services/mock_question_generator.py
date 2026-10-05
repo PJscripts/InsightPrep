@@ -1,5 +1,7 @@
 from typing import Any
 
+from app.services.rag.question_context import QuestionRAGContext
+
 
 class MockQuestionGenerator:
     def generate_question(
@@ -14,6 +16,7 @@ class MockQuestionGenerator:
         question_strategy: str = "fixed_independent",
         current_topic: str | None = None,
         covered_topics: list[str] | None = None,
+        rag_context: QuestionRAGContext | None = None,
     ) -> str:
         skills = resume_analysis.get("skills", [])
         primary_skill = skills[0] if skills else "software development"

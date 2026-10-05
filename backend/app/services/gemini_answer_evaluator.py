@@ -23,10 +23,17 @@ class GeminiAnswerEvaluator:
         question: str,
         answer: str,
         resume_analysis: dict[str, Any],
+        rag_context: Any | None = None,
     ) -> dict[str, Any]:
         skills = resume_analysis.get("skills", [])
         strengths = resume_analysis.get("strengths", [])
         skill_gaps = resume_analysis.get("skill_gaps", [])
+
+        rag_section = ""
+        if rag_context and hasattr(rag_context, "format_for_prompt"):
+            formatted = rag_context.format_for_prompt()
+            if formatted:
+                rag_section = f"\n{formatted}\n"
 
         prompt = f"""
 You are an expert interviewer evaluating one candidate answer.
@@ -41,7 +48,7 @@ Interview question:
 
 Candidate answer:
 {answer}
-
+{rag_section}
 Evaluate ONLY the answer given to this question.
 
 Scoring rubric:

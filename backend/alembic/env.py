@@ -9,7 +9,10 @@ from app.core.settings import settings
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+
+override_url = context.get_x_argument(as_dictionary=True).get("db_url")
+target_url = override_url or settings.database_url
+config.set_main_option("sqlalchemy.url", target_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

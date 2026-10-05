@@ -38,11 +38,18 @@ class GeminiQuestionGenerator:
         question_strategy: str = "fixed_independent",
         current_topic: str | None = None,
         covered_topics: list[str] | None = None,
+        rag_context: Any | None = None,
     ) -> str:
         previous_questions = previous_questions or []
         previous_answers = previous_answers or []
         previous_evaluations = previous_evaluations or []
         covered_topics = covered_topics or []
+
+        rag_section = ""
+        if rag_context and hasattr(rag_context, "format_for_prompt"):
+            formatted = rag_context.format_for_prompt()
+            if formatted:
+                rag_section = f"\n{formatted}\n"
 
         if question_strategy == "adaptive_initial":
             strategy = """
@@ -104,7 +111,7 @@ Previous evaluations:
 
 Question strategy:
 {strategy}
-
+{rag_section}
 General rules:
 - Maintain a professional interview style.
 - Match the requested difficulty.

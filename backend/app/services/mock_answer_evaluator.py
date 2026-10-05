@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.services.answer_evaluator import AnswerEvaluator
+from app.services.rag.answer_context import AnswerRAGContext
 
 
 class MockAnswerEvaluator:
@@ -9,6 +10,7 @@ class MockAnswerEvaluator:
         question: str,
         answer: str,
         resume_analysis: dict[str, Any],
+        rag_context: AnswerRAGContext | None = None,
     ) -> dict[str, Any]:
         answer_length = len(answer.strip())
 

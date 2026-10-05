@@ -1,0 +1,25 @@
+question_id,domain,question,baseline_score,rag_score,score_difference,baseline_technical_knowledge,rag_technical_knowledge,baseline_problem_solving,rag_problem_solving,baseline_communication,rag_communication,baseline_clarity,rag_clarity,retrieved_chunk_count,average_similarity,baseline_provider,rag_provider,errors_or_fallbacks
+DSA-01,DSA,"What is the time complexity of lookup, insertion, and deletion in a hash table, and what factors degrade this performance to O(n)?",8.2,8.5,0.3,9.0,9.0,6.5,8.0,8.5,8.5,8.5,9.0,3,0.643,groq,groq,None
+DSA-02,DSA,"How does array element indexing work in physical memory, and why does an array offer O(1) random access?",8.5,8.5,0.0,8.5,8.5,8.0,7.5,9.0,9.0,9.0,9.0,3,0.4983,groq,groq,None
+DSA-03,DSA,Compare separate chaining versus open addressing linear probing for hash collision resolution.,6.0,7.2,1.2,6.5,7.5,5.0,6.5,7.0,7.5,7.0,7.5,3,0.5409,groq,groq,None
+DSA-04,DSA,What are the structural differences and traversal characteristics of Breadth-First Search (BFS) versus Depth-First Search (DFS) on a graph?,8.0,8.0,0.0,8.5,8.5,7.5,7.5,8.5,8.0,8.0,8.0,3,0.6024,groq,groq,None
+DSA-05,DSA,"Why can an unbalanced Binary Search Tree degenerate in performance, and how do balanced trees like AVL or Red-Black trees prevent this?",8.2,8.6,0.4,8.0,8.5,7.0,8.0,9.0,9.0,8.5,9.0,3,0.3996,groq,groq,None
+DSA-06,DSA,How do you detect a cycle in a directed graph versus an undirected graph during traversal?,8.0,9.0,1.0,8.5,9.2,7.5,8.8,8.0,9.0,8.0,9.0,3,0.5461,groq,groq,None
+DBMS-01,DBMS,Explain the ACID properties of a database transaction and how the database guarantees Durability.,8.5,8.5,0.0,8.5,8.5,7.0,7.5,9.0,9.0,9.0,9.0,3,0.5831,groq,groq,None
+DBMS-02,DBMS,"What is the difference between Read Committed, Repeatable Read, and Serializable isolation levels, and what read phenomena does each prevent?",7.2,8.1,0.9,7.5,8.5,6.5,7.5,8.0,8.0,8.0,8.5,3,0.672,groq,groq,None
+DBMS-03,DBMS,Why are B-Trees or B+ Trees preferred over binary search trees for disk-based database indexing?,8.5,8.5,0.0,8.5,8.5,7.5,8.0,8.0,8.5,8.5,8.5,3,0.646,groq,groq,None
+DBMS-04,DBMS,What is the difference between a clustered index and a non-clustered secondary index in relational databases?,8.0,8.5,0.5,8.5,8.5,7.0,7.5,8.5,9.0,9.0,9.0,3,0.4591,groq,groq,None
+DBMS-05,DBMS,"How does Write-Ahead Logging (WAL) work, and how does the DBMS use it during crash recovery?",7.5,7.5,0.0,7.5,8.0,7.0,6.5,8.0,8.0,8.0,8.0,3,0.4744,groq,groq,None
+DBMS-06,DBMS,"What causes deadlocks in concurrent database transactions, and how does the database engine detect and resolve them?",7.8,8.3,0.5,8.0,8.5,6.5,7.5,8.5,8.0,8.5,8.5,3,0.4482,groq,groq,None
+OS-01,Operating Systems,"What is paging in virtual memory, and what happens step-by-step when a page fault occurs?",8.0,7.5,-0.5,8.5,7.5,7.5,7.0,8.0,8.0,8.0,8.0,3,0.6424,groq,groq,None
+OS-02,Operating Systems,"What is the Translation Lookaside Buffer (TLB), and what are the performance impacts of a TLB hit versus a TLB miss?",8.0,8.2,0.2,8.5,8.0,7.5,7.5,8.5,9.0,8.5,9.0,3,0.4073,groq,groq,None
+OS-03,Operating Systems,What is the key difference between a process and a thread in terms of memory space and context switching overhead?,8.5,8.3,-0.2,9.0,8.5,8.0,7.5,8.5,9.0,8.5,9.0,3,0.5619,groq,groq,None
+OS-04,Operating Systems,"Explain the difference between a mutex and a counting semaphore, and when you would use each.",8.2,7.5,-0.7,8.5,7.5,7.5,6.5,8.5,8.0,9.0,8.0,3,0.5648,groq,groq,None
+OS-05,Operating Systems,What are the four Coffman conditions necessary for a deadlock to occur in an operating system?,9.0,9.1,0.1,9.5,9.5,8.5,8.5,9.0,9.0,9.5,9.5,3,0.561,groq,groq,None
+OS-06,Operating Systems,"Compare LRU (Least Recently Used) and FIFO page replacement algorithms, and explain Belady's Anomaly.",8.0,8.3,0.3,8.5,8.5,7.0,7.5,8.0,8.5,8.0,8.5,3,0.3395,groq,groq,None
+CN-01,Computer Networks,"How does the TCP three-way handshake establish a reliable connection, and what are the specific packets exchanged?",8.5,8.5,0.0,8.5,8.5,8.0,7.5,9.0,9.0,9.0,9.0,3,0.5217,groq,groq,None
+CN-02,Computer Networks,"What are the core differences between TCP and UDP in terms of reliability, connection state, and header overhead?",8.5,9.0,0.5,9.0,9.2,6.5,8.5,8.5,9.0,8.5,9.3,3,0.6262,groq,groq,None
+CN-03,Computer Networks,"Compare the 7 layers of the OSI model with the 4 layers of the TCP/IP model, explaining how layers correspond.",8.5,8.5,0.0,8.5,8.5,7.5,7.5,9.0,9.0,9.0,9.0,3,0.3685,groq,groq,None
+CN-04,Computer Networks,"What are the four phases of TCP congestion control, and how does TCP respond to packet loss?",8.5,8.1,-0.4,9.0,8.5,7.5,7.5,8.5,8.0,9.0,8.5,3,0.5414,groq,groq,None
+CN-05,Computer Networks,"Explain the TCP four-way handshake for connection termination, and why the TIME_WAIT state is necessary.",8.0,8.0,0.0,8.5,7.5,7.5,6.5,8.0,8.0,8.0,8.0,3,0.5879,groq,groq,None
+CN-06,Computer Networks,Describe the hierarchical DNS lookup process when a browser resolves an uncached domain name like example.com.,7.3,7.5,0.2,7.0,7.0,5.5,7.0,8.0,8.5,7.5,7.5,3,0.2918,groq,groq,None

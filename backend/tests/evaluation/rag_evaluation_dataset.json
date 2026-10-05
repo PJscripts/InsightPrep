@@ -1,0 +1,218 @@
+[
+  {
+    "question_id": "DSA-01",
+    "domain": "DSA",
+    "topic": "Arrays and Hashing",
+    "difficulty": "medium",
+    "question": "What is the time complexity of lookup, insertion, and deletion in a hash table, and what factors degrade this performance to O(n)?",
+    "candidate_answer": "In an average case, lookup, insertion, and deletion in a hash table operate in O(1) time complexity. However, performance degrades to O(n) in the worst case when poor hash functions cause heavy hash collisions, leading all keys to map to the same bucket (forming long linked lists in separate chaining) or triggering long probe sequences in open addressing.",
+    "expected_concepts": "Average case O(1), worst case O(n), hash collisions, poor hash function, clustering in open addressing, bucket chaining length."
+  },
+  {
+    "question_id": "DSA-02",
+    "domain": "DSA",
+    "topic": "Arrays and Memory Layout",
+    "difficulty": "easy",
+    "question": "How does array element indexing work in physical memory, and why does an array offer O(1) random access?",
+    "candidate_answer": "Arrays are stored in contiguous blocks of memory. To access an element at index i, the computer uses the formula: memory address = base address + (index * element size). Since this memory address calculation requires a single multiplication and addition regardless of the index, random access is O(1).",
+    "expected_concepts": "Contiguous memory layout, base address offset formula, element byte size, constant-time arithmetic address calculation."
+  },
+  {
+    "question_id": "DSA-03",
+    "domain": "DSA",
+    "topic": "Hash Collisions",
+    "difficulty": "medium",
+    "question": "Compare separate chaining versus open addressing linear probing for hash collision resolution.",
+    "candidate_answer": "Separate chaining stores colliding elements in an auxiliary data structure such as a linked list or balanced tree at each bucket. Open addressing stores all elements directly within the hash table array itself; on a collision, linear probing sequentially scans subsequent slots (index + 1) until an empty cell is found, which can cause primary clustering.",
+    "expected_concepts": "Chaining with linked lists/trees at buckets, open addressing internal storage, linear probing step search, primary clustering issue."
+  },
+  {
+    "question_id": "DSA-04",
+    "domain": "DSA",
+    "topic": "Trees and Graphs",
+    "difficulty": "medium",
+    "question": "What are the structural differences and traversal characteristics of Breadth-First Search (BFS) versus Depth-First Search (DFS) on a graph?",
+    "candidate_answer": "BFS traverses a graph level-by-level using a FIFO queue, visiting all immediate neighbors before moving deeper; it naturally finds the shortest path on unweighted graphs. DFS explores as far as possible along each branch before backtracking using a LIFO stack or recursion, which is ideal for cycle detection and topological sorting.",
+    "expected_concepts": "BFS level-order with FIFO queue and shortest unweighted paths, DFS branch exploration with LIFO stack/recursion and backtracking."
+  },
+  {
+    "question_id": "DSA-05",
+    "domain": "DSA",
+    "topic": "Binary Search Trees",
+    "difficulty": "medium",
+    "question": "Why can an unbalanced Binary Search Tree degenerate in performance, and how do balanced trees like AVL or Red-Black trees prevent this?",
+    "candidate_answer": "An unbalanced BST can degenerate into a linked list when elements are inserted in sorted or reverse-sorted order, increasing search, insertion, and deletion complexity from O(log n) to O(n). Self-balancing trees like AVL and Red-Black trees perform tree rotations during insertions and deletions to keep the tree height strictly logarithmic at O(log n).",
+    "expected_concepts": "Unbalanced degeneration into O(n) linked list on sorted input, self-balancing tree rotations, maintaining O(log n) tree height."
+  },
+  {
+    "question_id": "DSA-06",
+    "domain": "DSA",
+    "topic": "Graph Traversals and Cycles",
+    "difficulty": "hard",
+    "question": "How do you detect a cycle in a directed graph versus an undirected graph during traversal?",
+    "candidate_answer": "In an undirected graph, a cycle exists if BFS or DFS encounters an already visited adjacent vertex that is not the direct parent of the current vertex. In a directed graph, that is insufficient; you must detect a back-edge to an ancestor currently in the active recursion call stack, typically tracked using three-color marking (unvisited, visiting, visited).",
+    "expected_concepts": "Undirected cycle via visited non-parent neighbor, directed cycle via back-edge in active recursion stack or 3-color node state tracking."
+  },
+  {
+    "question_id": "DBMS-01",
+    "domain": "DBMS",
+    "topic": "ACID Properties",
+    "difficulty": "medium",
+    "question": "Explain the ACID properties of a database transaction and how the database guarantees Durability.",
+    "candidate_answer": "ACID stands for Atomicity (all operations complete or none do), Consistency (transitions between valid states adhering to schema and constraints), Isolation (concurrent transactions execute independently without interference), and Durability (committed changes survive system failures). Durability is typically guaranteed using Write-Ahead Logging (WAL) and synchronous flushes to non-volatile storage.",
+    "expected_concepts": "Atomicity, Consistency, Isolation, Durability definitions, Write-Ahead Logging (WAL), non-volatile persistence."
+  },
+  {
+    "question_id": "DBMS-02",
+    "domain": "DBMS",
+    "topic": "Transaction Isolation Levels",
+    "difficulty": "hard",
+    "question": "What is the difference between Read Committed, Repeatable Read, and Serializable isolation levels, and what read phenomena does each prevent?",
+    "candidate_answer": "Read Committed allows reading only committed data, preventing dirty reads, but allows non-repeatable reads and phantom reads. Repeatable Read ensures any row read during a transaction remains identical upon re-reading, preventing dirty and non-repeatable reads. Serializable is the highest level, preventing dirty reads, non-repeatable reads, and phantom reads through two-phase locking or serializable snapshot isolation.",
+    "expected_concepts": "Dirty read prevention in Read Committed, Non-repeatable read prevention in Repeatable Read, Phantom read prevention in Serializable."
+  },
+  {
+    "question_id": "DBMS-03",
+    "domain": "DBMS",
+    "topic": "B-Tree Indexing",
+    "difficulty": "medium",
+    "question": "Why are B-Trees or B+ Trees preferred over binary search trees for disk-based database indexing?",
+    "candidate_answer": "B-Trees and B+ Trees have a high branching factor (fan-out), allowing each node to store many keys matching disk block or page sizes (e.g., 4KB-16KB). This makes the tree very shallow (low height), drastically reducing the number of expensive disk I/O operations compared to deep, low-fanout binary search trees. B+ trees also link leaf nodes for efficient range scans.",
+    "expected_concepts": "High fan-out matching disk block/page size, shallow tree height minimizing disk I/O, sequential leaf pointers in B+ trees for range queries."
+  },
+  {
+    "question_id": "DBMS-04",
+    "domain": "DBMS",
+    "topic": "Clustered vs Secondary Indexes",
+    "difficulty": "medium",
+    "question": "What is the difference between a clustered index and a non-clustered secondary index in relational databases?",
+    "candidate_answer": "A clustered index determines the actual physical ordering of rows stored on disk; therefore, a table can have only one clustered index (often the primary key). A non-clustered or secondary index maintains a separate B-tree structure where leaf nodes contain index keys and pointers (row IDs or clustered key values) that require an extra lookup step to fetch full row data.",
+    "expected_concepts": "Clustered index dictates physical row storage order (one per table), secondary index leaf pointers require secondary lookup/bookmark lookup."
+  },
+  {
+    "question_id": "DBMS-05",
+    "domain": "DBMS",
+    "topic": "Write-Ahead Logging and Recovery",
+    "difficulty": "hard",
+    "question": "How does Write-Ahead Logging (WAL) work, and how does the DBMS use it during crash recovery?",
+    "candidate_answer": "In Write-Ahead Logging, log records representing changes are written and flushed to durable non-volatile disk storage before the actual dirty database buffer pool pages are written to the table files. During crash recovery, the DBMS replays the log: an analysis pass identifies transactions, a REDO phase replays committed changes, and an UNDO phase rolls back incomplete transactions.",
+    "expected_concepts": "Log records flushed before dirty data pages, recovery phases: Analysis, Redo committed updates, Undo uncommitted transactions."
+  },
+  {
+    "question_id": "DBMS-06",
+    "domain": "DBMS",
+    "topic": "Concurrency and Deadlocks",
+    "difficulty": "hard",
+    "question": "What causes deadlocks in concurrent database transactions, and how does the database engine detect and resolve them?",
+    "candidate_answer": "Deadlocks occur when two or more transactions each hold locks that the other transactions need to proceed, forming a circular wait dependency. The database engine detects deadlocks by maintaining a Wait-For Graph and running cycle detection algorithms, or through lock wait timeouts. When a cycle is detected, the engine breaks the deadlock by selecting and aborting/rolling back a victim transaction.",
+    "expected_concepts": "Circular wait on locks held by competing transactions, Wait-For Graph cycle detection, lock wait timeout, victim selection and rollback."
+  },
+  {
+    "question_id": "OS-01",
+    "domain": "Operating Systems",
+    "topic": "Virtual Memory and Paging",
+    "difficulty": "medium",
+    "question": "What is paging in virtual memory, and what happens step-by-step when a page fault occurs?",
+    "candidate_answer": "Paging divides a process's virtual address space into fixed-size pages and physical memory into page frames. When a process accesses an unmapped or swapped-out virtual page, the MMU triggers a page fault interrupt. The OS pauses the process, traps to kernel mode, finds a free physical frame (evicting one via page replacement if full), loads the page from disk, updates the page table valid bit, and restarts the instruction.",
+    "expected_concepts": "Fixed-size virtual pages and physical frames, MMU trap to OS, page allocation/replacement, disk I/O load, page table update, instruction restart."
+  },
+  {
+    "question_id": "OS-02",
+    "domain": "Operating Systems",
+    "topic": "Translation Lookaside Buffer",
+    "difficulty": "medium",
+    "question": "What is the Translation Lookaside Buffer (TLB), and what are the performance impacts of a TLB hit versus a TLB miss?",
+    "candidate_answer": "The TLB is a high-speed hardware associative cache in the CPU/MMU that stores recent virtual-to-physical address translations. On a TLB hit, the physical address is obtained immediately in single-cycle or sub-cycle time without memory access. On a TLB miss, the MMU must perform an expensive multi-level page table walk in main memory to resolve the address before caching it in the TLB.",
+    "expected_concepts": "Hardware MMU cache for address translations, instant single-cycle translation on hit, multi-level page table memory walk on miss."
+  },
+  {
+    "question_id": "OS-03",
+    "domain": "Operating Systems",
+    "topic": "Processes and Threads",
+    "difficulty": "easy",
+    "question": "What is the key difference between a process and a thread in terms of memory space and context switching overhead?",
+    "candidate_answer": "A process is an independent execution unit with its own private address space, page tables, file descriptors, and security context. A thread is a lightweight execution flow within a process that shares the same virtual address space, heap, and code segment with other peer threads. Context switching between threads in the same process is faster because memory mappings and TLB caches do not need to be flushed.",
+    "expected_concepts": "Processes have isolated address spaces, threads share process heap/code/data, thread context switch avoids TLB/page table flush."
+  },
+  {
+    "question_id": "OS-04",
+    "domain": "Operating Systems",
+    "topic": "Process Synchronization",
+    "difficulty": "medium",
+    "question": "Explain the difference between a mutex and a counting semaphore, and when you would use each.",
+    "candidate_answer": "A mutex (mutual exclusion) is a binary locking primitive designed for resource exclusion; it has ownership semantics, meaning only the thread that acquired the mutex can unlock it. A counting semaphore maintains an integer counter representing available resource units and can be incremented or decremented (wait/signal) across different threads for signaling, producer-consumer coordination, or managing a pool of identical resources.",
+    "expected_concepts": "Mutex has ownership semantics for critical section exclusion, counting semaphore manages integer permits/signaling without ownership."
+  },
+  {
+    "question_id": "OS-05",
+    "domain": "Operating Systems",
+    "topic": "Deadlock Conditions",
+    "difficulty": "medium",
+    "question": "What are the four Coffman conditions necessary for a deadlock to occur in an operating system?",
+    "candidate_answer": "The four Coffman conditions are: 1. Mutual Exclusion (resources cannot be shared concurrently), 2. Hold and Wait (processes holding resources can request additional ones), 3. No Preemption (resources cannot be forcibly taken from a process until voluntarily released), and 4. Circular Wait (a closed chain of processes exists where each waits for a resource held by the next). All four must hold simultaneously for deadlock.",
+    "expected_concepts": "Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait, simultaneous occurrence requirement."
+  },
+  {
+    "question_id": "OS-06",
+    "domain": "Operating Systems",
+    "topic": "Page Replacement Algorithms",
+    "difficulty": "hard",
+    "question": "Compare LRU (Least Recently Used) and FIFO page replacement algorithms, and explain Belady's Anomaly.",
+    "candidate_answer": "FIFO replaces the oldest loaded page regardless of its usage frequency. LRU replaces the page that has not been accessed for the longest time, better approximating optimal replacement by leveraging temporal locality. Belady's Anomaly is a phenomenon where increasing the number of physical page frames results in an increased number of page faults; it can occur in FIFO because it is not a stack algorithm, whereas LRU is immune.",
+    "expected_concepts": "FIFO evicts oldest page, LRU evicts longest unaccessed page via temporal locality, Belady's anomaly definition and why FIFO suffers while LRU is a stack algorithm."
+  },
+  {
+    "question_id": "CN-01",
+    "domain": "Computer Networks",
+    "topic": "TCP Three-Way Handshake",
+    "difficulty": "medium",
+    "question": "How does the TCP three-way handshake establish a reliable connection, and what are the specific packets exchanged?",
+    "candidate_answer": "The TCP three-way handshake establishes a full-duplex reliable connection by exchanging three segments: 1. Client sends SYN with an Initial Sequence Number (ISN_c). 2. Server responds with SYN-ACK, acknowledging ISN_c + 1 and sending its own sequence number (ISN_s). 3. Client sends ACK acknowledging ISN_s + 1. This synchronizes sequence numbers and verifies bidirectional reachability.",
+    "expected_concepts": "SYN, SYN-ACK, ACK packet exchange, sequence number synchronization (ISN), acknowledgment increment, bidirectional connectivity confirmation."
+  },
+  {
+    "question_id": "CN-02",
+    "domain": "Computer Networks",
+    "topic": "TCP vs UDP",
+    "difficulty": "easy",
+    "question": "What are the core differences between TCP and UDP in terms of reliability, connection state, and header overhead?",
+    "candidate_answer": "TCP is a connection-oriented protocol that guarantees reliable, ordered, and error-checked byte stream delivery using handshakes, acknowledgments, retransmissions, and flow/congestion control, with a 20-60 byte header. UDP is connectionless and provides unreliable, unordered best-effort datagram delivery with no retransmissions or flow control, having a lightweight 8-byte header suitable for real-time traffic.",
+    "expected_concepts": "TCP connection-oriented/reliable/ordered with ACK and 20-byte header, UDP connectionless/unreliable/datagram with lightweight 8-byte header."
+  },
+  {
+    "question_id": "CN-03",
+    "domain": "Computer Networks",
+    "topic": "OSI vs TCP/IP Models",
+    "difficulty": "medium",
+    "question": "Compare the 7 layers of the OSI model with the 4 layers of the TCP/IP model, explaining how layers correspond.",
+    "candidate_answer": "The OSI model has 7 conceptual layers: Physical, Data Link, Network, Transport, Session, Presentation, Application. The pragmatic TCP/IP model condenses these into 4 layers: Network Interface / Link (combines OSI Physical and Data Link), Internet (corresponds to OSI Network, e.g., IP), Transport (corresponds to OSI Transport, e.g., TCP/UDP), and Application (merges OSI Session, Presentation, and Application, e.g., HTTP/DNS).",
+    "expected_concepts": "OSI 7 layers vs TCP/IP 4 layers mapping: Application merges top 3 OSI layers, Transport aligns, Internet maps to Network, Link maps to Data Link + Physical."
+  },
+  {
+    "question_id": "CN-04",
+    "domain": "Computer Networks",
+    "topic": "TCP Congestion Control",
+    "difficulty": "hard",
+    "question": "What are the four phases of TCP congestion control, and how does TCP respond to packet loss?",
+    "candidate_answer": "The four phases are Slow Start (exponential window growth), Congestion Avoidance (linear AIMD window growth once cwnd exceeds ssthresh), Fast Retransmit (retransmitting a missing segment upon receiving 3 duplicate ACKs without waiting for timeout), and Fast Recovery (temporarily inflating window to maintain packet flow). Upon packet timeout, TCP resets cwnd to 1 MSS, drops ssthresh to half cwnd, and restarts Slow Start.",
+    "expected_concepts": "Slow Start, Congestion Avoidance, Fast Retransmit (3 duplicate ACKs), Fast Recovery, cwnd and ssthresh adjustments on loss."
+  },
+  {
+    "question_id": "CN-05",
+    "domain": "Computer Networks",
+    "topic": "TCP Connection Teardown",
+    "difficulty": "medium",
+    "question": "Explain the TCP four-way handshake for connection termination, and why the TIME_WAIT state is necessary.",
+    "candidate_answer": "TCP termination uses a four-way handshake: Client sends FIN; Server responds with ACK (half-close); Server sends its own FIN when finished sending data; Client responds with ACK. The client enters the TIME_WAIT state for 2*MSL (Maximum Segment Lifetime) to ensure the final ACK was received by the server (retransmitting it if lost) and to allow all lingering duplicate packets in the network to expire.",
+    "expected_concepts": "FIN, ACK, FIN, ACK exchange (half-close), TIME_WAIT lasting 2*MSL, guaranteeing final ACK delivery and flushing lingering duplicate packets."
+  },
+  {
+    "question_id": "CN-06",
+    "domain": "Computer Networks",
+    "topic": "DNS Resolution Flow",
+    "difficulty": "medium",
+    "question": "Describe the hierarchical DNS lookup process when a browser resolves an uncached domain name like example.com.",
+    "candidate_answer": "When a domain is uncached locally, the client queries a recursive resolver. If uncached, the recursive resolver queries a Root Name Server (which directs it to the .com TLD server), then queries the Top-Level Domain (.com) name server (which directs it to example.com's Authoritative Name Server), and finally queries the Authoritative Name Server, which returns the IP address (A or AAAA record) with a TTL.",
+    "expected_concepts": "Recursive resolver querying hierarchy: Root name server, TLD (.com) name server, Authoritative name server, returning A/AAAA record with TTL."
+  }
+]

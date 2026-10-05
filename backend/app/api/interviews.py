@@ -31,6 +31,8 @@ from app.services.groq_answer_evaluator import GroqAnswerEvaluator
 from app.services.groq_question_generator import GroqQuestionGenerator
 from app.services.mock_answer_evaluator import MockAnswerEvaluator
 from app.services.mock_question_generator import MockQuestionGenerator
+from app.services.rag.answer_context_builder import AnswerRAGContextBuilder
+from app.services.rag.question_context_builder import QuestionRAGContextBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -189,17 +191,74 @@ def build_interview_history(
     return previous_questions, previous_answers, previous_evaluations
 
 
+def get_question_rag_builder() -> QuestionRAGContextBuilder:
+    """Return QuestionRAGContextBuilder for technical question generation."""
+    try:
+        from app.core.settings import settings
+        from app.services.rag.embeddings import (
+            LocalSentenceTransformerEmbeddingProvider,
+        )
+        from app.services.rag.retrieval_service import VectorRetrievalService
+
+        rag_db_url = getattr(settings, "rag_database_url", None)
+        if not rag_db_url:
+            # If no explicit RAG database URL configured, RAG remains disabled
+            return QuestionRAGContextBuilder(retrieval_service=None)
+
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
+        rag_engine = create_engine(rag_db_url, pool_pre_ping=True)
+        rag_session_factory = sessionmaker(
+            bind=rag_engine, autoflush=False, autocommit=False
+        )
+        embedding_provider = LocalSentenceTransformerEmbeddingProvider(
+            enabled=True, dimensions=384
+        )
+        retrieval_service = VectorRetrievalService(
+            session_factory=rag_session_factory,
+            embedding_provider=embedding_provider,
+            default_top_k=3,
+        )
+        return QuestionRAGContextBuilder(retrieval_service=retrieval_service)
+    except Exception as exc:
+        logger.warning(
+            "Failed to initialize RAG retrieval service for questions: %s", exc
+        )
+        return QuestionRAGContextBuilder(retrieval_service=None)
+
+
 def generate_question_with_fallback(
     session: InterviewSession,
     resume_analysis: dict[str, Any],
     db: Session,
     question_strategy: str,
+    rag_builder: QuestionRAGContextBuilder | None = None,
 ) -> str:
     (
         previous_questions,
         previous_answers,
         previous_evaluations,
     ) = build_interview_history(session, db)
+
+    # Resolve RAG context for technical interviews fail-open
+    rag_context = None
+    try:
+        builder = rag_builder or get_question_rag_builder()
+        rag_context = builder.build_context(
+            interview_type=session.interview_type,
+            current_topic=session.current_topic,
+            difficulty=session.difficulty,
+            question_strategy=question_strategy,
+            previous_questions=previous_questions,
+            resume_analysis=resume_analysis,
+        )
+    except Exception as exc:
+        logger.warning(
+            "RAG context retrieval failed open for session_id=%s: %s",
+            session.id,
+            exc,
+        )
 
     kwargs = {
         "resume_analysis": resume_analysis,
@@ -212,6 +271,7 @@ def generate_question_with_fallback(
         "question_strategy": question_strategy,
         "current_topic": session.current_topic,
         "covered_topics": list(session.covered_topics or []),
+        "rag_context": rag_context,
     }
 
     provider = session.question_provider.lower()
@@ -223,10 +283,12 @@ def generate_question_with_fallback(
         generator = get_question_generator_for_provider(provider)
         question_text = generator.generate_question(**kwargs)
         logger.info(
-            "Interview question generated: session_id=%s provider=%s question=%s",
+            "Interview question generated: session_id=%s provider=%s "
+            "question=%s rag_grounded=%s",
             session.id,
             provider,
             session.current_question,
+            rag_context is not None and rag_context.has_context,
         )
         return question_text
     except Exception:
@@ -274,12 +336,68 @@ def generate_question_with_fallback(
         return question_text
 
 
+def get_answer_rag_builder() -> AnswerRAGContextBuilder:
+    """Return AnswerRAGContextBuilder for technical answer evaluation."""
+    try:
+        from app.core.settings import settings
+        from app.services.rag.embeddings import (
+            LocalSentenceTransformerEmbeddingProvider,
+        )
+        from app.services.rag.retrieval_service import VectorRetrievalService
+
+        rag_db_url = getattr(settings, "rag_database_url", None)
+        if not rag_db_url:
+            return AnswerRAGContextBuilder(retrieval_service=None)
+
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
+        rag_engine = create_engine(rag_db_url, pool_pre_ping=True)
+        rag_session_factory = sessionmaker(
+            bind=rag_engine, autoflush=False, autocommit=False
+        )
+        embedding_provider = LocalSentenceTransformerEmbeddingProvider(
+            enabled=True, dimensions=384
+        )
+        retrieval_service = VectorRetrievalService(
+            session_factory=rag_session_factory,
+            embedding_provider=embedding_provider,
+            default_top_k=3,
+        )
+        return AnswerRAGContextBuilder(retrieval_service=retrieval_service)
+    except Exception as exc:
+        logger.warning(
+            "Failed to initialize RAG retrieval service for answer evaluation: %s",
+            exc,
+        )
+        return AnswerRAGContextBuilder(retrieval_service=None)
+
+
 def evaluate_answer_with_fallback(
     session: InterviewSession,
     question_text: str,
     answer_text: str,
     resume_analysis: dict[str, Any],
+    rag_builder: AnswerRAGContextBuilder | None = None,
 ) -> dict[str, Any]:
+    # Resolve RAG context for technical interviews fail-open
+    rag_context = None
+    try:
+        builder = rag_builder or get_answer_rag_builder()
+        rag_context = builder.build_context(
+            interview_type=session.interview_type,
+            question=question_text,
+            answer=answer_text,
+            current_topic=session.current_topic,
+            resume_analysis=resume_analysis,
+        )
+    except Exception as exc:
+        logger.warning(
+            "RAG evaluation context retrieval failed open for session_id=%s: %s",
+            session.id,
+            exc,
+        )
+
     provider = session.evaluation_provider.lower()
 
     if provider == "mock":
@@ -287,6 +405,7 @@ def evaluate_answer_with_fallback(
             question=question_text,
             answer=answer_text,
             resume_analysis=resume_analysis,
+            rag_context=rag_context,
         )
         evaluation["dimensions"] = normalize_skill_dimensions(
             evaluation.get("dimensions")
@@ -299,12 +418,15 @@ def evaluate_answer_with_fallback(
             question=question_text,
             answer=answer_text,
             resume_analysis=resume_analysis,
+            rag_context=rag_context,
         )
         logger.info(
-            "Interview answer evaluated: session_id=%s provider=%s question=%s",
+            "Interview answer evaluated: session_id=%s provider=%s "
+            "question=%s rag_grounded=%s",
             session.id,
             provider,
             session.current_question,
+            rag_context is not None and rag_context.has_context,
         )
         dimensions = normalize_skill_dimensions(evaluation.get("dimensions"))
         if dimensions is None:
@@ -330,6 +452,7 @@ def evaluate_answer_with_fallback(
                     question=question_text,
                     answer=answer_text,
                     resume_analysis=resume_analysis,
+                    rag_context=rag_context,
                 )
                 session.evaluation_provider = fallback_provider
                 logger.info(
@@ -361,6 +484,7 @@ def evaluate_answer_with_fallback(
             question=question_text,
             answer=answer_text,
             resume_analysis=resume_analysis,
+            rag_context=rag_context,
         )
         session.evaluation_provider = final_fallback
         logger.warning(
@@ -995,7 +1119,9 @@ def get_interview_history(
         created_at_iso = (
             created_at.isoformat() + "Z"
             if created_at is not None and created_at.tzinfo is None
-            else created_at.isoformat() if created_at is not None else None
+            else created_at.isoformat()
+            if created_at is not None
+            else None
         )
 
         history.append(
@@ -1057,7 +1183,9 @@ def get_interview_progress(
         created_at_iso = (
             created_at.isoformat() + "Z"
             if created_at is not None and created_at.tzinfo is None
-            else created_at.isoformat() if created_at is not None else None
+            else created_at.isoformat()
+            if created_at is not None
+            else None
         )
 
         skill_scores = aggregate_skill_profile(questions)
