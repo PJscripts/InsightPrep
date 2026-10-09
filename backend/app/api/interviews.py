@@ -400,13 +400,17 @@ def evaluate_answer_with_fallback(
 
     provider = session.evaluation_provider.lower()
 
+    eval_kwargs = {
+        "question": question_text,
+        "answer": answer_text,
+        "resume_analysis": resume_analysis,
+        "rag_context": rag_context,
+        "interview_type": session.interview_type,
+        "current_topic": session.current_topic,
+    }
+
     if provider == "mock":
-        evaluation = get_answer_evaluator_for_provider("mock").evaluate(
-            question=question_text,
-            answer=answer_text,
-            resume_analysis=resume_analysis,
-            rag_context=rag_context,
-        )
+        evaluation = get_answer_evaluator_for_provider("mock").evaluate(**eval_kwargs)
         evaluation["dimensions"] = normalize_skill_dimensions(
             evaluation.get("dimensions")
         )
@@ -414,12 +418,7 @@ def evaluate_answer_with_fallback(
 
     try:
         evaluator = get_answer_evaluator_for_provider(provider)
-        evaluation = evaluator.evaluate(
-            question=question_text,
-            answer=answer_text,
-            resume_analysis=resume_analysis,
-            rag_context=rag_context,
-        )
+        evaluation = evaluator.evaluate(**eval_kwargs)
         logger.info(
             "Interview answer evaluated: session_id=%s provider=%s "
             "question=%s rag_grounded=%s",
@@ -448,12 +447,7 @@ def evaluate_answer_with_fallback(
             try:
                 evaluation = get_answer_evaluator_for_provider(
                     fallback_provider
-                ).evaluate(
-                    question=question_text,
-                    answer=answer_text,
-                    resume_analysis=resume_analysis,
-                    rag_context=rag_context,
-                )
+                ).evaluate(**eval_kwargs)
                 session.evaluation_provider = fallback_provider
                 logger.info(
                     "Evaluation provider fallback succeeded: session_id=%s "
@@ -480,12 +474,7 @@ def evaluate_answer_with_fallback(
 
         final_fallback = settings.llm_final_fallback.lower()
         evaluator = get_answer_evaluator_for_provider(final_fallback)
-        evaluation = evaluator.evaluate(
-            question=question_text,
-            answer=answer_text,
-            resume_analysis=resume_analysis,
-            rag_context=rag_context,
-        )
+        evaluation = evaluator.evaluate(**eval_kwargs)
         session.evaluation_provider = final_fallback
         logger.warning(
             "Evaluation final fallback used: session_id=%s provider=%s question=%s",
@@ -831,6 +820,7 @@ def get_current_question(
         "question_number": question.question_number,
         "total_questions": session.total_questions,
         "interview_mode": session.interview_mode,
+        "interview_type": session.interview_type,
         "current_topic": session.current_topic,
         "question_text": question.question_text,
         "question_type": question.question_type,
@@ -1064,6 +1054,7 @@ def submit_answer(
         "current_question": session.current_question,
         "total_questions": session.total_questions,
         "interview_mode": session.interview_mode,
+        "interview_type": session.interview_type,
         "current_topic": session.current_topic,
         "question": {
             "id": next_question.id,
@@ -1119,9 +1110,7 @@ def get_interview_history(
         created_at_iso = (
             created_at.isoformat() + "Z"
             if created_at is not None and created_at.tzinfo is None
-            else created_at.isoformat()
-            if created_at is not None
-            else None
+            else created_at.isoformat() if created_at is not None else None
         )
 
         history.append(
@@ -1183,9 +1172,7 @@ def get_interview_progress(
         created_at_iso = (
             created_at.isoformat() + "Z"
             if created_at is not None and created_at.tzinfo is None
-            else created_at.isoformat()
-            if created_at is not None
-            else None
+            else created_at.isoformat() if created_at is not None else None
         )
 
         skill_scores = aggregate_skill_profile(questions)

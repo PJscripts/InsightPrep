@@ -3,6 +3,7 @@ from typing import Any
 from groq import Groq
 
 from app.core.settings import settings
+from app.services.behavioral_utils import is_behavioral_context
 
 
 class GroqQuestionGenerator:
@@ -41,36 +42,90 @@ class GroqQuestionGenerator:
             if formatted:
                 rag_section = f"\n{formatted}\n"
 
-        if question_strategy == "adaptive_initial":
-            strategy = """
+        is_behavioral = is_behavioral_context(
+            interview_type=interview_type,
+            current_topic=current_topic,
+        )
+
+        if is_behavioral:
+            if question_strategy == "adaptive_initial":
+                strategy = """
+This is the opening question of an adaptive behavioural interview.
+Ask one concise question inviting the candidate to share a brief background summary
+focusing on their collaborative experience and career motivation.
+Do not ask multiple questions in one message.
+"""
+            elif question_strategy == "follow_up":
+                strategy = f"""
+Ask exactly ONE concise follow-up about the candidate's previous behavioural answer.
+Stay on the current behavioural theme: {current_topic}.
+Probe an actionable aspect of the STAR framework (e.g., what specific action they took,
+how they resolved a conflict, their decision rationale, or the measurable
+result/outcome).
+Do not introduce a new topic.
+Do not combine multiple questions.
+"""
+            elif question_strategy == "topic_shift":
+                strategy = f"""
+Switch to the new behavioural competency or theme: {current_topic}.
+Ask exactly ONE concise behavioural question inviting the candidate to share a past
+experience (e.g., teamwork, conflict resolution, leadership, failure, decision-making,
+or achievement).
+Frame the question so the candidate can structure their response using STAR
+(Situation, Task, Action, Result).
+Do not combine multiple questions.
+"""
+            else:
+                strategy = f"""
+Ask exactly ONE concise past-experience behavioural question about: {current_topic}.
+Cover competencies like teamwork, conflict resolution, leadership, learning from
+failure, decision-making, or high-stakes achievements.
+Encourage a structured response covering Situation, Task, Action, and Result (STAR).
+Do not make it a follow-up to the previous question.
+Do not combine multiple questions.
+"""
+        else:
+            if question_strategy == "adaptive_initial":
+                strategy = """
 This is the opening question of an adaptive interview.
 Ask one concise introduction question relevant to the candidate and role.
 Do not ask multiple questions in one message.
 """
-        elif question_strategy == "follow_up":
-            strategy = f"""
+            elif question_strategy == "follow_up":
+                strategy = f"""
 Ask exactly ONE concise follow-up about the candidate's previous answer.
 Stay on the current topic: {current_topic}.
 Probe one useful detail, decision, claim, weakness, or example.
 Do not introduce a new topic.
 Do not combine multiple questions.
 """
-        elif question_strategy == "topic_shift":
-            strategy = f"""
+            elif question_strategy == "topic_shift":
+                strategy = f"""
 Switch to the new topic: {current_topic}.
 Ask exactly ONE concise question about it.
 Do not continue drilling the previous topic.
 Do not combine multiple questions.
 """
-        else:
-            strategy = f"""
+            else:
+                strategy = f"""
 Ask exactly ONE concise independent question about: {current_topic}.
 Do not make it a follow-up to the previous question.
 Do not combine multiple questions.
 """
 
+        system_role_desc = (
+            "You are an expert HR and behavioural interviewer who evaluates candidates "
+            "using competency-based interviewing and the STAR framework "
+            "(Situation, Task, Action, Result)."
+            if is_behavioral
+            else (
+                "You are an expert technical interviewer conducting a personalized "
+                "interview."
+            )
+        )
+
         prompt = f"""
-You are a professional interviewer conducting a personalized interview.
+{system_role_desc}
 
 Candidate profile:
 Skills: {resume_analysis.get("skills", [])}

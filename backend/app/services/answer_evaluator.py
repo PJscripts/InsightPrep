@@ -10,4 +10,6 @@ class AnswerEvaluator(Protocol):
         answer: str,
         resume_analysis: dict[str, Any],
         rag_context: AnswerRAGContext | None = None,
+        interview_type: str = "technical",
+        current_topic: str | None = None,
     ) -> dict[str, Any]: ...

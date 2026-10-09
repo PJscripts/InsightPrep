@@ -393,6 +393,9 @@ function Interview() {
         session_id: data.session_id,
         question_number: data.current_question,
         total_questions: data.total_questions,
+        interview_mode: data.interview_mode,
+        interview_type: data.interview_type || question.interview_type,
+        current_topic: data.current_topic || question.current_topic,
         question_text: data.question.question_text,
         question_type: data.question.question_type,
         status: data.status,
@@ -497,6 +500,34 @@ function Interview() {
             aria-label="Interview question audio"
           />
         </div>
+
+        {((question.interview_type === "hr" || question.question_type === "hr") ||
+          (question.interview_type === "mixed" &&
+            ["teamwork", "conflict", "leadership", "failure", "career", "goals", "communication", "motivation", "problem solving"].some((k) =>
+              (question.current_topic || "").toLowerCase().includes(k)
+            ))) && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: "10px 14px",
+              borderRadius: 8,
+              background: "rgba(79, 70, 229, 0.08)",
+              border: "1px solid rgba(79, 70, 229, 0.2)",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              fontSize: 13,
+              color: "var(--text-color, #334155)",
+            }}
+          >
+            <span style={{ fontSize: 16 }}>💡</span>
+            <div>
+              <strong style={{ color: "#4f46e5" }}>STAR Tip:</strong> Structure your response around{" "}
+              <strong>Situation</strong>, <strong>Task</strong>, <strong>Action</strong> (what you personally did), and{" "}
+              <strong>Result</strong> (impact or outcome).
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="card answer-card">

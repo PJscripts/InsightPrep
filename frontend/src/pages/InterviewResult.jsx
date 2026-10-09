@@ -60,7 +60,7 @@ function InterviewResult() {
 
     {activeSection === "overall" && <section>
       <div className="grid-2">
-        <section className="card card-pad"><div className="card-header"><div><h2 className="section-title">Skill Profile</h2><p className="section-description">How this specific interview performed across the four evaluation dimensions.</p></div></div>{result.skill_profile ? <RadarChart profile={result.skill_profile} /> : <div className="empty-state">Skill profile is unavailable for this session.</div>}</section>
+        <section className="card card-pad"><div className="card-header"><div><h2 className="section-title">Skill Profile</h2><p className="section-description">How this specific interview performed across the four evaluation dimensions.</p></div></div>{result.skill_profile ? <RadarChart profile={result.skill_profile} interviewType={result.interview_type} /> : <div className="empty-state">Skill profile is unavailable for this session.</div>}</section>
         <section className="card card-pad"><h2 className="section-title">Overall Feedback</h2><p className="section-description">Session-level feedback and the main takeaways from the completed interview.</p><div className="result-feedback-list">{(result.final_feedback || []).map((point, index) => <div className="result-feedback-item" key={`${index}-${point}`}>{point}</div>)}</div></section>
       </div>
     </section>}
@@ -74,9 +74,15 @@ function InterviewResult() {
   </div>;
 }
 
-function RadarChart({ profile }) {
+function RadarChart({ profile, interviewType }) {
   const size = 380; const center = size/2; const radius = 118;
-  const coords = SKILLS.map(([key, label], index) => { const angle = -Math.PI/2 + index*2*Math.PI/SKILLS.length; const value = Number(profile[key] ?? 0); return { key, label, value, angle, point: { x: center + Math.cos(angle)*radius*(value/10), y: center + Math.sin(angle)*radius*(value/10) }, labelPoint: { x: center + Math.cos(angle)*(radius+42), y: center + Math.sin(angle)*(radius+42) } }; });
+  const skillsList = SKILLS.map(([key, labelText]) => {
+    if (key === "technical_knowledge" && interviewType === "hr") {
+      return [key, "Role Competency"];
+    }
+    return [key, labelText];
+  });
+  const coords = skillsList.map(([key, label], index) => { const angle = -Math.PI/2 + index*2*Math.PI/skillsList.length; const value = Number(profile[key] ?? 0); return { key, label, value, angle, point: { x: center + Math.cos(angle)*radius*(value/10), y: center + Math.sin(angle)*radius*(value/10) }, labelPoint: { x: center + Math.cos(angle)*(radius+42), y: center + Math.sin(angle)*(radius+42) } }; });
   const polygon = coords.map((c)=>`${c.point.x},${c.point.y}`).join(" ");
   return <div className="radar-wrap"><svg viewBox={`0 0 ${size} ${size}`} width="100%" role="img" aria-label="Skill profile radar chart">
     {[2.5,5,7.5,10].map((value)=><polygon key={value} points={coords.map(c=>`${center+Math.cos(c.angle)*radius*(value/10)},${center+Math.sin(c.angle)*radius*(value/10)}`).join(" ")} fill="none" stroke="var(--chart-grid)" strokeWidth="1"/>)}

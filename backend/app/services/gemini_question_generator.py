@@ -4,6 +4,7 @@ from google import genai
 from google.genai import types
 
 from app.core.settings import settings
+from app.services.behavioral_utils import is_behavioral_context
 
 
 class GeminiQuestionGenerator:
@@ -51,39 +52,92 @@ class GeminiQuestionGenerator:
             if formatted:
                 rag_section = f"\n{formatted}\n"
 
-        if question_strategy == "adaptive_initial":
-            strategy = """
+        is_behavioral = is_behavioral_context(
+            interview_type=interview_type,
+            current_topic=current_topic,
+        )
+
+        if is_behavioral:
+            if question_strategy == "adaptive_initial":
+                strategy = """
+This is the opening question of an adaptive behavioural interview.
+Ask one concise question inviting the candidate to introduce themselves,
+highlighting their collaborative work and career motivations.
+Do not ask multiple questions in one message.
+Do not ask for a full life story.
+"""
+            elif question_strategy == "follow_up":
+                strategy = f"""
+Ask exactly ONE concise follow-up question based on the candidate's previous
+behavioural answer.
+Stay focused on the current behavioural competency: {current_topic}.
+Probe a specific component of the STAR framework (e.g., their individual actions,
+decisions under pressure, conflict handling, or measurable outcome).
+Do not introduce a new topic.
+Do not combine multiple questions.
+"""
+            elif question_strategy == "topic_shift":
+                strategy = f"""
+Move to the new behavioural competency or theme: {current_topic}.
+Ask exactly ONE concise question asking the candidate for a real past experience
+(e.g., teamwork, conflict resolution, leadership, failure, decision-making,
+or achievement).
+Invite a structured response covering Situation, Task, Action, and Result (STAR).
+Do not combine multiple questions.
+"""
+            else:
+                strategy = f"""
+Ask exactly ONE concise past-experience behavioural question about the current topic:
+{current_topic}.
+Focus on key competencies: teamwork, conflict resolution, leadership, learning from
+failure, decision-making, or high-stakes achievements.
+Encourage the candidate to describe a real situation, the task, their specific
+actions, and the outcome (STAR).
+Do not make it a follow-up to the previous question.
+Do not combine multiple questions.
+"""
+        else:
+            if question_strategy == "adaptive_initial":
+                strategy = """
 This is the opening question of an adaptive interview.
 Ask one concise introduction question that helps the candidate introduce
 their background in a way relevant to this interview.
 Do not ask multiple questions in one message.
 Do not ask for a full life story.
 """
-        elif question_strategy == "follow_up":
-            strategy = f"""
+            elif question_strategy == "follow_up":
+                strategy = f"""
 Ask exactly ONE concise follow-up question based on the candidate's previous
 answer. Stay focused on the current topic: {current_topic}.
 Probe one useful detail, decision, claim, weakness, or example from the answer.
 Do not introduce a new topic.
 Do not combine multiple questions.
 """
-        elif question_strategy == "topic_shift":
-            strategy = f"""
+            elif question_strategy == "topic_shift":
+                strategy = f"""
 Move to the new topic: {current_topic}.
 Ask exactly ONE concise question about that topic.
 Do not continue drilling the previous topic.
 Do not combine multiple questions.
 """
-        else:
-            strategy = f"""
+            else:
+                strategy = f"""
 Ask exactly ONE concise independent question about the current topic:
 {current_topic}.
 Do not make it a follow-up to the previous question.
 Do not combine multiple questions.
 """
 
+        interviewer_persona = (
+            "You are an expert HR and behavioural interviewer who evaluates candidates "
+            "through competency-based interviewing and the STAR framework "
+            "(Situation, Task, Action, Result)."
+            if is_behavioral
+            else "You are an expert interviewer conducting a personalized interview."
+        )
+
         prompt = f"""
-You are an expert interviewer conducting a personalized interview.
+{interviewer_persona}
 
 Candidate profile:
 Skills: {resume_analysis.get("skills", [])}

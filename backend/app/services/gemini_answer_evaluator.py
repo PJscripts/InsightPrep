@@ -24,7 +24,11 @@ class GeminiAnswerEvaluator:
         answer: str,
         resume_analysis: dict[str, Any],
         rag_context: Any | None = None,
+        interview_type: str = "technical",
+        current_topic: str | None = None,
     ) -> dict[str, Any]:
+        from app.services.behavioral_utils import is_behavioral_context
+
         skills = resume_analysis.get("skills", [])
         strengths = resume_analysis.get("strengths", [])
         skill_gaps = resume_analysis.get("skill_gaps", [])
@@ -35,22 +39,70 @@ class GeminiAnswerEvaluator:
             if formatted:
                 rag_section = f"\n{formatted}\n"
 
-        prompt = f"""
-You are an expert interviewer evaluating one candidate answer.
+        is_behavioral = is_behavioral_context(
+            interview_type=interview_type,
+            current_topic=current_topic,
+            question_text=question,
+        )
 
-Candidate profile:
-Skills: {skills}
-Strengths: {strengths}
-Skill gaps: {skill_gaps}
+        if is_behavioral:
+            persona = (
+                "You are an expert HR and behavioural interview evaluator "
+                "specializing in competency-based assessment and the STAR framework "
+                "(Situation, Task, Action, Result)."
+            )
+            rubric_section = """
+Scoring rubric for Behavioural / STAR assessment:
 
-Interview question:
-{question}
+0-2:
+Irrelevant, evasive, or demonstrates no concrete experience.
+No Situation, Task, Action, or Result.
 
-Candidate answer:
-{answer}
-{rag_section}
-Evaluate ONLY the answer given to this question.
+3-4:
+Extremely vague or hypothetical answer. Missing critical STAR components
+(e.g., no personal action taken, no tangible result, or unclear situation).
+Speaks only in generic team generalities without personal ownership.
 
+5-6:
+Describes a relevant situation and task, but actions lack specificity or
+personal ownership, or the result/impact is missing or unquantified.
+
+7-8:
+Clear and structured past-experience example covering Situation, Task,
+specific personal Actions taken, and the Result/outcome. Demonstrates
+ownership, decision-making, and self-awareness with minor gaps in impact
+or reflection.
+
+9-10:
+Exemplary STAR response: compelling context, well-defined task, highly
+specific proactive actions and decision-making rationale, and measurable,
+impactful results with thoughtful reflection on lessons learned.
+
+Behavioural evaluation criteria:
+1. STAR Structure & Completeness (Situation, Task, Action, Result)
+2. Personal Ownership & Agency
+   (Focus on individual contributions and decisions vs generic "we")
+3. Decision-Making & Problem-Solving
+   (Rationale behind choices, navigating constraints or conflict)
+4. Result & Impact (Measurable outcome, business/team impact, learning reflection)
+5. Actionable Feedback
+   (Highlight strengths and clearly identify missing or weak STAR elements)
+- Do not reward answers merely for being long or containing superficial STAR
+  buzzwords without genuine substance.
+
+Score these four skill dimensions independently from 0 to 10:
+- technical_knowledge: role & domain competency (understanding of role responsibilities,
+  realistic workplace context, and relevant domain practices)
+- problem_solving: conflict resolution, critical thinking, initiative, and
+  decision-making under constraints
+- communication: narrative flow, conciseness, structured articulation, and
+  listening comprehension
+- clarity: specificity of actions, concrete details vs vague generalities, and
+  measurable results
+"""
+        else:
+            persona = "You are an expert interviewer evaluating one candidate answer."
+            rubric_section = """
 Scoring rubric:
 0-2:
 The answer is incorrect, irrelevant, extremely incomplete,
@@ -84,13 +136,31 @@ Also score these four skill dimensions independently from 0 to 10:
 - problem_solving: reasoning, decomposition, and approach
 - communication: how clearly the answer is expressed
 - clarity: structure, precision, and ease of understanding
+"""
+
+        prompt = f"""
+{persona}
+
+Candidate profile:
+Skills: {skills}
+Strengths: {strengths}
+Skill gaps: {skill_gaps}
+
+Interview type: {interview_type}
+Interview question:
+{question}
+
+Candidate answer:
+{answer}
+{rag_section}
+Evaluate ONLY the answer given to this question.
+
+{rubric_section}
 
 Important rules:
 - Score only what the candidate actually demonstrated.
 - Do not give credit for skills merely because they appear on the resume.
 - Do not invent experience, projects, or knowledge.
-- A short but correct answer may score moderately well,
-  but should not receive a high score without sufficient depth.
 - Explain both strengths and weaknesses in the feedback.
 - Give practical improvement advice.
 - The feedback should be concise but useful to the candidate.
@@ -106,13 +176,6 @@ Return ONLY valid JSON:
     "clarity": 0.0
   }}
 }}
-
-Additional requirements:
-- score must be a number from 0.0 to 10.0.
-- Use one decimal place.
-- feedback must be a non-empty string.
-- dimensions must contain all four required keys with numbers from 0.0 to 10.0.
-- Do not include markdown.
 """
 
         try:
