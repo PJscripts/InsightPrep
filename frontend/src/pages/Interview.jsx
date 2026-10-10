@@ -18,7 +18,12 @@ function Interview() {
   const [interimTranscript, setInterimTranscript] = useState("");
   const [answerMode, setAnswerMode] = useState("type");
   const [listening, setListening] = useState(false);
-  const [speechSupported, setSpeechSupported] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState(() => {
+    return (
+      typeof window !== "undefined" &&
+      !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    );
+  });
   const [audioReady, setAudioReady] = useState(false);
   const [audioError, setAudioError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,12 +31,6 @@ function Interview() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const Recognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) {
-      setSpeechSupported(false);
-    }
-
     return () => {
       listeningRequestedRef.current = false;
       stoppingRef.current = true;

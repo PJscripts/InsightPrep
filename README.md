@@ -1,225 +1,296 @@
-# Large Language Models for Technical Interview Preparation
+# InsightPrep — AI-Powered Interview Preparation & Assessment Platform
 
-## Project Overview
+InsightPrep is a full-stack, enterprise-grade AI-powered mock interview and performance analysis platform. It provides personalized, adaptive technical and behavioral/HR interviews, real-time speech-to-text input, natural audio question playback, structured answer evaluations (including the STAR methodology for behavioral competencies), and in-depth performance analytics.
 
-An LLM-powered technical interview preparation platform developed as a Software Engineering project.
+---
 
-The system is designed to help users prepare for technical interviews through personalized interview questions, adaptive AI-driven interviews, answer evaluation, performance feedback, and progress tracking.
+## Key Features
 
-The project uses Large Language Models as an intelligent component within a structured software engineering architecture.
+- **User Authentication & Session Management**: Secure registration, login, and session cookie validation using JWT and argon2/passlib password hashing.
+- **Resume Analysis & Custom Tailoring**: PDF and text resume parsing with automated skill extraction, role matching, and interview focus area recommendations.
+- **Adaptive Technical Interviews**: Dynamic question generation powered by Large Language Models (LLMs) with Retrieval-Augmented Generation (RAG) context injection from verified computer science knowledge bases (DSA, DBMS, OS, Computer Networks).
+- **Behavioral & HR Interviews**: STAR methodology-based interview framework assessing Situation, Task, Action, and Result dimensions, candidate ownership, and decision-making.
+- **Speech & Audio Integration**:
+  - In-browser real-time speech-to-text (Web Speech API) with live transcription.
+  - High-fidelity text-to-speech audio question playback via ElevenLabs API.
+- **Multi-Provider AI Fallback Engine**: Production-resilient architecture featuring tiered LLM routing (Google Gemini $\leftrightarrow$ Groq $\leftrightarrow$ deterministic Mock fallback) with automatic retry and timeout handling.
+- **In-Depth Performance Analytics**: Multi-dimensional rubrics, category breakdown, actionable feedback, and historical progress tracking.
+
+---
 
 ## Technology Stack
 
-### Frontend
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, Vite, React Router v7, Vanilla CSS / Modern Design System, Web Speech API |
+| **Backend** | Python 3.12, FastAPI, Uvicorn, Pydantic v2, SQLAlchemy 2.0, Alembic |
+| **Database & Vector Search** | PostgreSQL 17 with `pgvector` extension |
+| **RAG & Embeddings** | Sentence-Transformers (`all-MiniLM-L6-v2`), Chunking, Cosine Vector Search |
+| **AI / LLM Services** | Google Gemini API (`gemini-3.7-flash`), Groq API (`openai/gpt-oss-120b`), Mock Provider |
+| **Audio / Speech** | ElevenLabs Text-to-Speech API, Browser Web Speech Recognition |
+| **Code Quality & Testing** | Pytest, Ruff, Black, ESLint |
 
-- React
-- Vite
-- React Router
-- Tailwind CSS
-- Axios
-- ESLint
-- Prettier
+---
 
-### Backend
+## High-Level Architecture
 
-- Python
-- FastAPI
-- Uvicorn
-- Pydantic Settings
-- SQLAlchemy
-- Psycopg
-- Alembic
-- Ruff
-- Black
+```
+                    ┌────────────────────────────┐
+                    │      React Frontend        │
+                    │   (Vite / localhost:5173)   │
+                    └──────────────┬─────────────┘
+                                   │ HTTP / JSON & Audio
+                                   ▼
+                    ┌────────────────────────────┐
+                    │      FastAPI Backend       │
+                    │   (Uvicorn / localhost:8000)│
+                    └──────┬───────┬───────┬─────┘
+                           │       │       │
+             ┌─────────────┘       │       └─────────────┐
+             ▼                     ▼                     ▼
+┌────────────────────────┐  ┌─────────────┐  ┌────────────────────────┐
+│ PostgreSQL + pgvector  │  │ LLM Routing │  │ ElevenLabs Audio TTS   │
+│  (Docker / port 5433)  │  │  Gemini     │  │ (Question Playback)    │
+│  - Users & Resumes     │  │  Groq       │  └────────────────────────┘
+│  - Sessions & Reports  │  │  Mock Fallback
+│  - 384-dim Embeddings  │  └─────────────┘
+└────────────────────────┘
+```
 
-### Database
+---
 
-- PostgreSQL
+## Repository Structure
 
-### Development and DevOps
-
-- Docker
-- Docker Compose
-- Git
-- Pre-commit
-- VS Code
-
-## System Architecture
-
-The current system follows a layered architecture in which the React frontend communicates with the FastAPI backend, and the backend manages communication with PostgreSQL.
-
-                 User
-                   │
-                   ▼
-           React Frontend
-          localhost:5173
-                   │
-                Axios
-                   │
-                   ▼
-           FastAPI Backend
-          localhost:8000
-                   │
-               SQLAlchemy
-                   │
-                   ▼
-        PostgreSQL Database
-          Docker / localhost:5433
-
-## Component Responsibilities
-
-### Frontend
-
-Responsible for:
-
-1. User interface
-2. Client-side routing
-3. User interaction
-4. API communication
-5. Displaying results and feedback
-
-### Backend
-
-Responsible for:
-
-1. API endpoints
-2. Business logic
-3. Configuration
-4. Authentication and authorization in future phases
-5. AI/LLM integration in future phases
-6. Database operations
-
-### Database
-
-Responsible for:
-
-1. Persistent application data
-2. User information
-3. Resume data
-4. Interview sessions
-5. Interview messages
-6. Performance reports
-
-## Project Structure
-
+```
 LLM-Interview-Preparation/
-│
-├── frontend/
-│ └── src/
-│ ├── components/
-│ ├── context/
-│ ├── hooks/
-│ ├── layouts/
-│ ├── pages/
-│ ├── services/
-│ └── utils/
-│
 ├── backend/
-│ ├── app/
-│ │ ├── ai/
-│ │ ├── api/
-│ │ ├── core/
-│ │ ├── models/
-│ │ ├── repositories/
-│ │ ├── schemas/
-│ │ ├── services/
-│ │ └── utils/
-│ │
-│ ├── alembic/
-│ ├── tests/
-│ ├── requirements.txt
-│ └── alembic.ini
-│
+│   ├── alembic/              # Database schema migrations
+│   │   └── versions/         # Migration scripts
+│   ├── app/
+│   │   ├── api/              # FastAPI route endpoints (auth, interviews, resumes)
+│   │   ├── core/             # Configuration, database engine, security & JWT
+│   │   ├── models/           # SQLAlchemy ORM models (User, Resume, Interview, Knowledge)
+│   │   ├── schemas/          # Pydantic validation schemas
+│   │   └── services/         # Business logic, LLM engines, ElevenLabs TTS & RAG
+│   │       └── rag/          # Document loader, chunker, embeddings & retrieval
+│   ├── tests/                # Automated pytest suite (114 passing tests)
+│   ├── alembic.ini           # Alembic migration configuration
+│   ├── pyproject.toml        # Backend build configuration
+│   ├── requirements.txt      # Python dependencies (UTF-8)
+│   └── ruff.toml             # Ruff linter configuration
+├── frontend/
+│   ├── src/
+│   │   ├── components/       # Reusable UI components & layouts
+│   │   ├── pages/            # View pages (Login, Register, Dashboard, Interview, Results)
+│   │   └── styles/           # CSS design system & variables
+│   ├── package.json          # Frontend dependencies & scripts
+│   └── vite.config.js        # Vite configuration
 ├── docs/
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+│   ├── architecture.md       # Detailed technical architecture
+│   └── knowledge/            # Computer science domain documents for RAG (DSA, DBMS, OS, CN)
+├── docker-compose.yml        # PostgreSQL with pgvector service container
+├── .env.example              # Environment variables template
+└── README.md                 # Project documentation
+```
 
-## Backend Layer Responsibilities
+---
 
-1. api/ — API routes and endpoints
-2. core/ — Configuration and database setup
-3. models/ — SQLAlchemy database models
-4. schemas/ — Pydantic request/response schemas
-5. services/ — Application and business logic
-6. repositories/ — Database access logic
-7. ai/ — LLM-related functionality
-8. utils/ — Shared utility functions
+## Prerequisites
 
-## Running the Project
+Before setting up the project locally, verify that you have installed:
 
-### Prerequisites
+- **Python**: Version `3.12` (recommended). Note: PyTorch & sentence-transformers require Python $\le$ 3.12 on Windows.
+- **Node.js**: Version `20.x` or later (with `npm`).
+- **Docker Desktop**: Running with Compose enabled.
+- **Git**: For version control.
 
-Make sure the following are installed:
+---
 
-- Node.js and npm
-- Python
-- Docker Desktop
-- Git
+## Local Setup & Installation (Windows PowerShell)
 
-### 1. Start PostgreSQL
+### 1. Clone the Repository
 
-From the project root:
-powershell
+```powershell
+git clone https://github.com/PJscripts/InsightPrep.git
+cd InsightPrep
+```
+
+### 2. Configure Environment Variables
+
+Copy the `.env.example` template to `.env` in both the project root and `backend/`:
+
+```powershell
+Copy-Item .env.example .env
+Copy-Item .env.example backend\.env
+```
+
+Edit `backend/.env` to configure your API keys (optional if running in mock fallback mode):
+- `DATABASE_URL`: `postgresql+psycopg://interview_user:interview_password@localhost:5433/interview_db`
+- `JWT_SECRET`: Enter a secure random string (at least 32 characters).
+- `GEMINI_API_KEY`: *(Optional)* Your Google Gemini API key.
+- `GROQ_API_KEY`: *(Optional)* Your Groq API key.
+- `ELEVENLABS_API_KEY`: *(Optional)* Your ElevenLabs API key for audio playback.
+
+> **Note**: If API keys are omitted, the system automatically falls back to deterministic mock providers, allowing complete offline testing of interviews, evaluations, and reports.
+
+### 3. Start PostgreSQL with pgvector via Docker
+
+InsightPrep requires PostgreSQL with the `pgvector` extension for storing session data and knowledge embeddings:
+
+```powershell
 docker compose up -d
+```
 
-The PostgreSQL container runs on:
-localhost:5433
+Verify that the container is healthy and mapped to port `5433`:
 
-To verify the container:
+```powershell
 docker ps
+```
 
-### 2. Start the Backend
+### 4. Backend Setup & Alembic Migrations
 
-Open a terminal in the backend directory:
+Open a PowerShell terminal in the `backend/` directory:
+
+```powershell
 cd backend
 
-Activate the Python virtual environment:
+# Create Python 3.12 virtual environment
+python -m venv .venv
+
+# Activate the virtual environment
 .\.venv\Scripts\Activate.ps1
 
-Start the FastAPI server:
-uvicorn app.main:app --reload
+# Upgrade pip and install backend dependencies
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-The backend will be available at:
-http://127.0.0.1:8000
+Run database migrations to initialize all tables:
 
-FastAPI Swagger documentation:
-http://127.0.0.1:8000/docs
+```powershell
+alembic upgrade head
+```
 
-Health check:
-http://127.0.0.1:8000/health
+#### *(Optional)* Ingest RAG Knowledge Base
 
-### 3. Start the Frontend
+To populate the vector database with the computer science curriculum documents (DSA, DBMS, OS, Computer Networks):
 
-Open another terminal in the frontend directory:
+```powershell
+python -m app.services.rag.ingest_cli --db-url "postgresql+psycopg://interview_user:interview_password@localhost:5433/interview_db"
+```
+
+### 5. Start the FastAPI Backend Server
+
+> **Important (Windows Application Control Note)**:
+> On some Windows installations, running `.\.venv\Scripts\uvicorn.exe` directly may be restricted by Windows Application Control or AppLocker policies. Launching Uvicorn through the signed Python executable (`python -m uvicorn`) runs reliably without restriction:
+
+```powershell
+# From the backend/ directory with .venv active:
+python -m uvicorn app.main:app --reload
+```
+
+The backend server will run at:
+- API Base: `http://127.0.0.1:8000`
+- Interactive Swagger UI: `http://127.0.0.1:8000/docs`
+- Health Check: `http://127.0.0.1:8000/health`
+
+### 6. Frontend Setup & Startup
+
+Open a separate terminal in the `frontend/` directory:
+
+```powershell
 cd frontend
 
-Install dependencies if required:
+# Install dependencies
 npm install
 
-Start the development server:
+# Start Vite development server
 npm run dev
+```
 
-The frontend will be available at:
-http://localhost:5173
+The frontend application will be accessible at:
+- Web Application: `http://localhost:5173`
 
-### 4. Database Migrations
+---
 
-Alembic is used to manage database schema changes.
+## Verifying the Setup & Running Tests
 
-Check the current migration:
-alembic current
+### Backend Unit & Integration Tests
 
-Create a new migration after modifying database models:
-alembic revision --autogenerate -m "describe change"
+The backend test suite includes 114 automated tests covering authentication, resume parsing, question generation, behavioral STAR evaluation, RAG retrieval, and LLM fallback routing:
 
-Apply migrations:
-alembic upgrade head
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
 
-### 5. Stop PostgreSQL
+# Run pytest using an in-memory SQLite database for isolated test execution
+$env:DATABASE_URL="sqlite:///:memory:"
+pytest tests/ -v
+```
 
-When finished working:
-docker compose down
+### Backend Linting & Formatting
 
-This stops the PostgreSQL container while preserving the database volume.
+```powershell
+cd backend
+ruff check .
+black --check app alembic tests
+```
+
+### Frontend Linting & Production Build
+
+```powershell
+cd frontend
+npm run lint
+npm run build
+```
+
+---
+
+## Troubleshooting & Known Pitfalls
+
+### 1. `sqlite3.OperationalError: no such table: users`
+- **Cause**: PowerShell environment variables take precedence over `.env` files in Pydantic Settings. If `$env:DATABASE_URL="sqlite:///:memory:"` was set during earlier testing in the same terminal session, the FastAPI backend will connect to an empty in-memory SQLite database rather than your PostgreSQL database.
+- **Fix**: Clear the shell environment variable in PowerShell:
+  ```powershell
+  Remove-Item Env:\DATABASE_URL
+  ```
+  Or verify that `backend/.env` has `DATABASE_URL` pointing to `localhost:5433`.
+
+### 2. Windows Application Control Blocking `uvicorn.exe`
+- **Cause**: Windows Application Control policy prevents execution of third-party `.exe` binaries inside virtual environments.
+- **Fix**: Always execute Uvicorn as a Python module:
+  ```powershell
+  python -m uvicorn app.main:app --reload
+  ```
+
+### 3. Port Conflict on PostgreSQL (Port 5432 vs 5433)
+- If your local machine already runs a native PostgreSQL instance on default port `5432`, the provided `docker-compose.yml` maps container port `5432` to host port `5433`. Ensure your `DATABASE_URL` specifies `localhost:5433`.
+
+---
+
+## API Documentation Overview
+
+Key endpoints provided by the backend (accessible via Swagger at `/docs`):
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/auth/register` | Register a new user account |
+| `POST` | `/auth/login` | Authenticate user & set secure HTTP-only cookie |
+| `GET` | `/auth/me` | Fetch authenticated user details |
+| `POST` | `/auth/logout` | Terminate session & clear cookies |
+| `POST` | `/resumes/upload` | Upload & extract resume text (PDF/TXT) |
+| `POST` | `/interviews` | Create a new interview session (Technical, Behavioral, or Mixed) |
+| `POST` | `/interviews/{id}/next-question` | Fetch next adaptive interview question with RAG/STAR context |
+| `POST` | `/interviews/{id}/submit-answer` | Submit answer for evaluation & receive dimensional feedback |
+| `GET` | `/interviews/{id}/question-audio` | Stream ElevenLabs audio TTS for the active question |
+| `GET` | `/interviews/{id}/results` | Retrieve final performance report & score breakdown |
+| `GET` | `/health` | Service health status |
+
+---
+
+## Deployment Readiness Notes
+
+- **Docker Containerization**: The PostgreSQL service with `pgvector` is defined in `docker-compose.yml`. For full-stack deployment, backend and frontend containers can be coordinated via multi-stage Dockerfiles.
+- **CORS & Environment Separation**: Set `ENVIRONMENT=production`, adjust `FRONTEND_URL` and `BACKEND_URL` in `.env`, and generate a 64-character random string for `JWT_SECRET`.
+- **Database Migrations**: In production pipelines, run `alembic upgrade head` as part of the deployment task before container startup.
+- **Managed Vector Store**: When migrating to managed cloud PostgreSQL (AWS RDS, Supabase, Neon), ensure the `vector` extension is enabled.
